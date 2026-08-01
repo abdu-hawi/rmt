@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    app()->setLocale('en');
     $this->seed(\Database\Seeders\CategorySeeder::class);
     $this->seed(\Database\Seeders\ProductSeeder::class);
 });

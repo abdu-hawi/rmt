@@ -18,10 +18,11 @@ class CartController extends Controller
         $items = $this->cart->items();
         $subtotal = $this->cart->subtotal();
         $discount = $this->cart->discount();
+        $vat = $this->cart->vat();
         $total = $this->cart->total();
         $coupon = $this->cart->appliedCoupon();
 
-        return view('cart.index', compact('items', 'subtotal', 'discount', 'total', 'coupon'));
+        return view('cart.index', compact('items', 'subtotal', 'discount', 'vat', 'total', 'coupon'));
     }
 
     public function add(Request $request)

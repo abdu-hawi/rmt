@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    app()->setLocale('en');
     $this->seed(\Database\Seeders\CategorySeeder::class);
     $this->seed(\Database\Seeders\ProductSeeder::class);
     $this->cart = app(CartService::class);
@@ -47,6 +48,38 @@ it('processes guest checkout successfully', function () {
     expect($order->payer_email)->toBe('john@example.com');
     expect($order->items)->toHaveCount(1);
     expect($order->items->first()->product_name)->toBe($product->name_en);
+});
+
+it('stores VAT-compliant totals on the order', function () {
+    $product = Product::first();
+    $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), [
+        'payer_first_name' => 'John',
+        'payer_last_name' => 'Doe',
+        'payer_address' => '123 St',
+        'payer_country' => 'US',
+        'payer_city' => 'NY',
+        'payer_email' => 'j@t.com',
+        'payer_phone' => '123',
+        'payer_zip' => '10001',
+    ]);
+
+    $order = Order::first();
+    $expectedVat = round($order->subtotal * 0.15, 2);
+
+    expect((float) $order->vat)->toBe($expectedVat);
+    expect((float) $order->total)->toBe(round($order->subtotal + $expectedVat, 2));
+});
+
+it('shows VAT breakdown on checkout page', function () {
+    $product = Product::first();
+    $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
+
+    $this->get(route('checkout.index'))
+        ->assertStatus(200)
+        ->assertSee('Subtotal (Excl. VAT)')
+        ->assertSee('VAT (15%)');
 });
 
 it('requires all payer fields', function () {

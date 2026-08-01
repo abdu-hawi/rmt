@@ -36,9 +36,10 @@
                     </span>
                 </div>
                 <div class="flex justify-between"><span class="text-muted-400">{{ __('Currency') }}:</span><span class="text-white font-mono">{{ strtoupper($order->currency) }}</span></div>
-                <div class="flex justify-between"><span class="text-muted-400">{{ __('Subtotal') }}:</span><span class="text-white">{{ \App\Services\CurrencyService::format($order->subtotal, $order->currency) }}</span></div>
+                <div class="flex justify-between"><span class="text-muted-400">{{ __('Subtotal (Excl. VAT)') }}:</span><span class="text-white">{{ \App\Services\CurrencyService::format($order->subtotal, $order->currency) }}</span></div>
                 <div class="flex justify-between"><span class="text-muted-400">{{ __('Discount') }}:</span><span class="text-success">-{{ \App\Services\CurrencyService::format($order->discount, $order->currency) }}</span></div>
-                <div class="flex justify-between"><span class="text-muted-400">{{ __('Total') }}:</span><span class="text-accent-light font-bold">{{ \App\Services\CurrencyService::format($order->total, $order->currency) }}</span></div>
+                <div class="flex justify-between"><span class="text-muted-400">{{ __('VAT (:rate%)', ['rate' => config('tax.vat_rate_percent')]) }}:</span><span class="text-white">{{ \App\Services\CurrencyService::format($order->vat, $order->currency) }}</span></div>
+                <div class="flex justify-between"><span class="text-muted-400 font-medium">{{ __('Grand Total') }}:</span><span class="text-accent-light font-bold">{{ \App\Services\CurrencyService::format($order->total, $order->currency) }}</span></div>
                 <div class="flex justify-between"><span class="text-muted-400">{{ __('Date') }}:</span><span class="text-white">{{ $order->created_at->format('Y-m-d H:i') }}</span></div>
             </div>
 

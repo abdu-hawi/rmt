@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    app()->setLocale('en');
     $this->seed(\Database\Seeders\CategorySeeder::class);
     $this->seed(\Database\Seeders\ProductSeeder::class);
     $this->cart = app(CartService::class);
@@ -42,6 +43,38 @@ it('calculates cart total in USD', function () {
     $this->cart->add($product, 2);
 
     expect($this->cart->subtotal('usd'))->toBe($product->price_usd * 2);
+});
+
+it('calculates VAT after discount per ZATCA', function () {
+    $product = Product::first();
+    $this->cart->add($product, 1);
+
+    $subtotal = $this->cart->subtotal('usd');
+    expect($this->cart->taxableSubtotal('usd'))->toBe($subtotal);
+    expect($this->cart->vat('usd'))->toBe(round($subtotal * 0.15, 2));
+    expect($this->cart->total('usd'))->toBe(round($subtotal * 1.15, 2));
+});
+
+it('applies discount before calculating VAT', function () {
+    $product = Product::first();
+    $this->cart->add($product, 2);
+    $subtotal = $this->cart->subtotal('usd');
+
+    $coupon = \App\Models\Coupon::create([
+        'code' => 'ZATCA10',
+        'type' => 'percentage',
+        'value' => 10,
+    ]);
+    $this->cart->applyCoupon('ZATCA10');
+
+    $discount = round($subtotal * 0.10, 2);
+    $taxable = round($subtotal - $discount, 2);
+    $vat = round($taxable * 0.15, 2);
+
+    expect($this->cart->discount('usd'))->toBe($discount);
+    expect($this->cart->taxableSubtotal('usd'))->toBe($taxable);
+    expect($this->cart->vat('usd'))->toBe($vat);
+    expect($this->cart->total('usd'))->toBe(round($taxable + $vat, 2));
 });
 
 it('shows cart page', function () {

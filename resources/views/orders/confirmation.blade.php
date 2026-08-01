@@ -24,7 +24,21 @@
                     <span class="px-2.5 py-0.5 text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-full">{{ __(ucfirst($order->status)) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-muted-400">{{ __('Total') }}</span>
+                    <span class="text-muted-400">{{ __('Subtotal (Excl. VAT)') }}</span>
+                    <span class="text-white">{{ \App\Services\CurrencyService::format($order->subtotal, $order->currency) }}</span>
+                </div>
+                @if((float) $order->discount > 0)
+                    <div class="flex justify-between items-center">
+                        <span class="text-muted-400">{{ __('Discount') }}</span>
+                        <span class="text-success">-{{ \App\Services\CurrencyService::format($order->discount, $order->currency) }}</span>
+                    </div>
+                @endif
+                <div class="flex justify-between items-center">
+                    <span class="text-muted-400">{{ __('VAT (:rate%)', ['rate' => config('tax.vat_rate_percent')]) }}</span>
+                    <span class="text-white">{{ \App\Services\CurrencyService::format($order->vat, $order->currency) }}</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-700/30">
+                    <span class="text-muted-400 font-medium">{{ __('Grand Total') }}</span>
                     <span class="text-white font-bold">{{ \App\Services\CurrencyService::format($order->total, $order->currency) }}</span>
                 </div>
                 <div class="flex justify-between items-center">

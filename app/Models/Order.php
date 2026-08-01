@@ -14,7 +14,7 @@ class Order extends Model
         'payer_first_name', 'payer_last_name',
         'payer_address', 'payer_country', 'payer_city',
         'payer_email', 'payer_phone', 'payer_zip',
-        'currency', 'subtotal', 'discount', 'total',
+        'currency', 'subtotal', 'discount', 'vat', 'total',
         'status', 'coupon_id', 'notes',
     ];
 
@@ -23,6 +23,7 @@ class Order extends Model
         return [
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
+            'vat' => 'decimal:2',
             'total' => 'decimal:2',
         ];
     }

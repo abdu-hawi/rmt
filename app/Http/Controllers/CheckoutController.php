@@ -25,9 +25,11 @@ class CheckoutController extends Controller
         $items = $this->cart->items();
         $subtotal = $this->cart->subtotal();
         $discount = $this->cart->discount();
+        $taxableSubtotal = $this->cart->taxableSubtotal();
+        $vat = $this->cart->vat();
         $total = $this->cart->total();
 
-        return view('checkout.index', compact('items', 'subtotal', 'discount', 'total'));
+        return view('checkout.index', compact('items', 'subtotal', 'discount', 'taxableSubtotal', 'vat', 'total'));
     }
 
     public function store(Request $request)
@@ -53,6 +55,8 @@ class CheckoutController extends Controller
             $currency = CurrencyService::current();
             $subtotal = $this->cart->subtotal($currency);
             $discount = $this->cart->discount($currency);
+            $taxableSubtotal = $this->cart->taxableSubtotal($currency);
+            $vat = $this->cart->vat($currency);
             $total = $this->cart->total($currency);
             $coupon = $this->cart->appliedCoupon();
 
@@ -61,6 +65,7 @@ class CheckoutController extends Controller
                 'currency' => $currency,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'vat' => $vat,
                 'total' => $total,
                 'coupon_id' => $coupon?->id,
                 ...$validated,

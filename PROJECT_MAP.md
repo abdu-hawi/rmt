@@ -129,7 +129,7 @@ categories       → id, parent_id (self FK), slug, name_en/ar, is_active, sort_
 orders           → id, order_number (unique), user_id (nullable FK),
                    payer_first_name, payer_last_name, payer_address, payer_country,
                    payer_city, payer_email, payer_phone, payer_zip,
-                   currency, subtotal, discount, total, status (enum),
+                   currency, subtotal, discount, vat, total, status (enum),
                    coupon_id (nullable FK), notes
 
 order_items      → id, order_id (FK), product_id (FK), product_name, price, quantity
@@ -159,8 +159,9 @@ settings         → id, key (unique), value
 | 7 | Middleware (Localize, Currency, Admin) | ✅ | Registered in bootstrap/app.php |
 | 8 | Routes (41 routes) + Controllers (11) | ✅ | `php artisan route:list` |
 | 9 | Blade Views (18 views, RTL/LTR) | ✅ | Full admin panel included |
-| 10 | Tests (46 passing, 102 assertions) | ✅ | `php artisan test` |
+| 10 | Tests (50 passing, 114 assertions) | ✅ | `php artisan test` |
+| 11 | ZATCA VAT Compliance (15%) | ✅ | config/tax.php, orders.vat, CartService taxable/vat, VAT breakdown UI + tests |
 
 ---
 
-*Last updated: 2026-07-30 — All milestones complete. ✅*
+*Last updated: 2026-08-01 — ZATCA VAT compliance added. All milestones complete. ✅*

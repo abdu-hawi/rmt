@@ -67,11 +67,12 @@
                         @endif
 
                         <div class="space-y-3 pt-3 border-t border-slate-700/30">
-                            <div class="flex justify-between text-sm"><span class="text-muted-400">{{ __('Subtotal') }}</span><span class="text-white">{{ \App\Services\CurrencyService::format($subtotal) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-muted-400">{{ __('Subtotal (Excl. VAT)') }}</span><span class="text-white">{{ \App\Services\CurrencyService::format($subtotal) }}</span></div>
                             @if($discount > 0)
                                 <div class="flex justify-between text-sm"><span class="text-muted-400">{{ __('Discount') }}</span><span class="text-success">-{{ \App\Services\CurrencyService::format($discount) }}</span></div>
                             @endif
-                            <div class="flex justify-between text-lg font-bold border-t border-slate-700/30 pt-3"><span class="text-white">{{ __('Total') }}</span><span class="text-accent-light">{{ \App\Services\CurrencyService::format($total) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-muted-400">{{ __('VAT (:rate%)', ['rate' => config('tax.vat_rate_percent')]) }}</span><span class="text-white">{{ \App\Services\CurrencyService::format($vat) }}</span></div>
+                            <div class="flex justify-between text-lg font-bold border-t border-slate-700/30 pt-3"><span class="text-white">{{ __('Grand Total') }}</span><span class="text-accent-light">{{ \App\Services\CurrencyService::format($total) }}</span></div>
                         </div>
 
                         <a href="{{ route('checkout.index') }}" class="block w-full py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg text-center transition-all glow-border">

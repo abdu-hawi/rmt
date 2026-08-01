@@ -95,9 +95,19 @@ class CartService
         return min($coupon->value, $subtotal);
     }
 
+    public function taxableSubtotal(string $currency = null): float
+    {
+        return round(max(0, $this->subtotal($currency) - $this->discount($currency)), 2);
+    }
+
+    public function vat(string $currency = null): float
+    {
+        return round($this->taxableSubtotal($currency) * config('tax.vat_rate', 0.15), 2);
+    }
+
     public function total(string $currency = null): float
     {
-        return round($this->subtotal($currency) - $this->discount($currency), 2);
+        return round($this->taxableSubtotal($currency) + $this->vat($currency), 2);
     }
 
     public function applyCoupon(string $code): array
