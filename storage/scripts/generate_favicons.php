@@ -20,6 +20,20 @@ function lerp(float $t, array $a, array $b): array
 
 function buildIcon(int $size, string $font): \GdImage
 {
+    $scale = 4; // supersample factor for smooth edges
+    $big = buildIconRaw($size * $scale, $font);
+
+    $img = imagecreatetruecolor($size, $size);
+    imagesavealpha($img, true);
+    $transparent = imagecolorallocatealpha($img, 0, 0, 0, 127);
+    imagefill($img, 0, 0, $transparent);
+    imagealphablending($img, true);
+    imagecopyresampled($img, $big, 0, 0, 0, 0, $size, $size, $size * $scale, $size * $scale);
+    return $img;
+}
+
+function buildIconRaw(int $size, string $font): \GdImage
+{
     $img = imagecreatetruecolor($size, $size);
     imagesavealpha($img, true);
     $transparent = imagecolorallocatealpha($img, 0, 0, 0, 127);
@@ -28,32 +42,32 @@ function buildIcon(int $size, string $font): \GdImage
     $c1 = hexToRgb('6366f1'); // accent
     $c2 = hexToRgb('3b82f6'); // accent-light
     $radius = (int) round($size * 0.24);
+    $corner = $size - $radius - 1; // corner circle center coordinate
 
-    // rounded-rect mask + diagonal gradient fill
-    $mask = imagecreatetruecolor($size, $size);
-    imagesavealpha($mask, true);
-    $mt = imagecolorallocatealpha($mask, 0, 0, 0, 127);
-    imagefill($mask, 0, 0, $mt);
-    $white = imagecolorallocate($mask, 255, 255, 255);
-    imagefilledrectangle($mask, $radius, 0, $size - $radius - 1, $size - 1, $white);
-    imagefilledrectangle($mask, 0, $radius, $size - 1, $size - $radius - 1, $white);
-    imagefilledarc($mask, $radius, $radius, $radius * 2, $radius * 2, 180, 270, $white, IMG_ARC_PIE);
-    imagefilledarc($mask, $size - $radius - 1, $radius, $radius * 2, $radius * 2, 270, 360, $white, IMG_ARC_PIE);
-    imagefilledarc($mask, $radius, $size - $radius - 1, $radius * 2, $radius * 2, 90, 180, $white, IMG_ARC_PIE);
-    imagefilledarc($mask, $size - $radius - 1, $size - $radius - 1, $radius * 2, $radius * 2, 0, 90, $white, IMG_ARC_PIE);
-
-    $grad = imagecreatetruecolor($size, $size);
+    // Paint the diagonal gradient directly inside the rounded-rect shape
     for ($y = 0; $y < $size; $y++) {
         for ($x = 0; $x < $size; $x++) {
-            $t = ($x + $y) / (2 * ($size - 1));
-            $rgb = lerp($t, $c1, $c2);
-            $col = imagecolorallocate($grad, $rgb[0], $rgb[1], $rgb[2]);
-            imagesetpixel($grad, $x, $y, $col);
+            $inside = false;
+            if ($x >= $radius && $x < $size - $radius) {
+                $inside = true;                 // vertical middle band
+            } elseif ($y >= $radius && $y < $size - $radius) {
+                $inside = true;                 // horizontal middle band
+            } else {
+                $cx = $x < $radius ? $radius : $corner;
+                $cy = $y < $radius ? $radius : $corner;
+                $dx = $x - $cx;
+                $dy = $y - $cy;
+                $inside = ($dx * $dx + $dy * $dy) <= ($radius * $radius); // corner quarter-circle
+            }
+
+            if ($inside) {
+                $t = ($x + $y) / (2 * ($size - 1));
+                $rgb = lerp($t, $c1, $c2);
+                $col = imagecolorallocate($img, $rgb[0], $rgb[1], $rgb[2]);
+                imagesetpixel($img, $x, $y, $col);
+            }
         }
     }
-
-    imagecopy($img, $grad, 0, 0, 0, 0, $size, $size);
-    imagecopy($img, $mask, 0, 0, 0, 0, $size, $size);
 
     // letter R
     $fontSize = $size * 0.56;
