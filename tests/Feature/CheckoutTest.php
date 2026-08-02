@@ -165,7 +165,7 @@ it('redirects to payment gateway after checkout and stores order', function () {
     $order = Order::first();
     expect($order)->not->toBeNull();
     expect($order->status)->toBe('pending');
-    expect($this->cart->isEmpty())->toBeTrue();
+    expect($this->cart->isEmpty())->toBeFalse();
 });
 
 it('sends SAR amount to payment gateway when cart currency is USD', function () {
@@ -220,7 +220,10 @@ it('returns pending status when Redis has no callback data', function () {
         ->assertJson(['status' => 'pending']);
 });
 
-it('returns completed status when Redis has callback data', function () {
+it('returns completed status when Redis has callback data and clears cart', function () {
+    $product = Product::first();
+    $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
+
     Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
         Mockery::mock(['get' => json_encode(['result' => 'SUCCESS'])])
     );
@@ -237,6 +240,8 @@ it('returns completed status when Redis has callback data', function () {
     $this->get(route('checkout.payment.status', $order->order_number))
         ->assertOk()
         ->assertJsonPath('status', 'completed');
+
+    expect($this->cart->isEmpty())->toBeTrue();
 });
 
 it('queries gateway directly via fallback when Redis is empty', function () {

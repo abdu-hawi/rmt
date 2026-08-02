@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\PaymentOrder;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Redis;
 
 class PaymentGatewayController extends Controller
 {
+    public function __construct(
+        protected CartService $cart
+    ) {}
+
     private function getEdfapayInitiateUrl(): string
     {
         return config('services.edfapay.initiate_url', 'https://api.edfapay.com/payment/initiate');
@@ -243,6 +248,7 @@ class PaymentGatewayController extends Controller
     {
         if ($order->status !== 'completed') {
             $order->update(['status' => 'completed']);
+            $this->cart->clear();
             Log::info('Order marked as completed', [
                 'order_id'      => $order->id,
                 'order_number'  => $order->order_number,

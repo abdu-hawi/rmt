@@ -6,6 +6,15 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-16">
+        @if($errors->has('payment_error') || session('error'))
+            <div class="max-w-5xl mx-auto mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm flex items-start gap-3">
+                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="space-y-1">
+                    <p class="font-semibold">{{ $errors->first('payment_error') ?? session('error') }}</p>
+                </div>
+            </div>
+        @endif
+
         <div class="text-center mb-10">
             <h1 class="text-3xl md:text-4xl font-extrabold text-white">{{ __('Checkout') }}</h1>
             <p class="mt-2 text-muted-400">{{ __('Complete your purchase in seconds') }}</p>

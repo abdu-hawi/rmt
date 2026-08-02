@@ -90,7 +90,6 @@ class CheckoutController extends Controller
             }
 
             DB::commit();
-            $this->cart->clear();
 
             Log::info('Order placed', ['order_number' => $order->order_number, 'total' => $total, 'currency' => $currency]);
 
