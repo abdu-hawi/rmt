@@ -276,6 +276,7 @@ class PaymentGatewayController extends Controller
      */
     public function handleCallback(Request $request)
     {
+        Log::info('Edfapay handleCallback received', $request->all());
         $callbackData = $request->all();
 
         // 1. التحقق من الهاش
