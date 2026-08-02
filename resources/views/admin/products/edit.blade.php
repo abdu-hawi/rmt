@@ -36,11 +36,13 @@
         <div class="grid grid-cols-2 gap-5">
             <div>
                 <label class="block text-sm font-medium text-muted-400 mb-1.5">{{ __('Price (USD)') }} *</label>
-                <input type="number" step="0.01" name="price_usd" value="{{ old('price_usd', $product->price_usd) }}" required class="input-floating">
+                <input type="number" step="0.01" min="0" name="price_usd" id="price_usd" value="{{ old('price_usd', $product->price_usd) }}" required
+                       data-rate="{{ config('currency.rate_usd_to_sar', 3.75) }}" class="input-floating">
             </div>
             <div>
                 <label class="block text-sm font-medium text-muted-400 mb-1.5">{{ __('Price (SAR)') }} *</label>
-                <input type="number" step="0.01" name="price_sar" value="{{ old('price_sar', $product->price_sar) }}" required class="input-floating">
+                <input type="number" step="0.01" min="0" name="price_sar" id="price_sar" value="{{ old('price_sar', $product->price_sar) }}" required
+                       data-rate="{{ config('currency.rate_usd_to_sar', 3.75) }}" class="input-floating">
             </div>
         </div>
 
@@ -90,4 +92,24 @@
             <button class="px-6 py-2.5 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg transition-all glow-border">{{ __('Save') }}</button>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var usdInput = document.getElementById('price_usd');
+            var sarInput = document.getElementById('price_sar');
+            var rate = parseFloat(usdInput.dataset.rate) || 3.75;
+
+            function round2(v) { return Math.round(v * 100) / 100; }
+
+            usdInput.addEventListener('input', function () {
+                if (this.value === '') { sarInput.value = ''; return; }
+                sarInput.value = round2(parseFloat(this.value) * rate);
+            });
+
+            sarInput.addEventListener('input', function () {
+                if (this.value === '') { usdInput.value = ''; return; }
+                usdInput.value = round2(parseFloat(this.value) / rate);
+            });
+        });
+    </script>
 @endsection
