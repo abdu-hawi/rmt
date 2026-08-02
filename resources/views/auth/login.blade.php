@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('Login') }} - Riof Digital</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-mark.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,7 +17,10 @@
 
     <div class="glass-card p-8 w-full max-w-md relative">
         <div class="text-center mb-8">
-            <a href="{{ route('home') }}" class="text-2xl font-extrabold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">Riof</a>
+            <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 text-2xl font-extrabold">
+                <img src="{{ asset('images/logo-mark.svg') }}" alt="Riof" class="w-9 h-9 rounded-lg">
+                <span class="bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">Riof</span>
+            </a>
             <p class="text-muted-400 text-sm mt-2">{{ __('Sign in to your account') }}</p>
         </div>
 

@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin - Riof Digital')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-mark.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,7 +16,10 @@
     <div class="flex h-screen overflow-hidden">
         <aside class="w-64 flex-shrink-0 bg-carbon-900 border-r border-slate-800/50 overflow-y-auto">
             <div class="p-5 border-b border-slate-800/50">
-                <a href="{{ route('admin.dashboard') }}" class="text-lg font-extrabold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">Riof Admin</a>
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
+                    <img src="{{ asset('images/logo-mark.svg') }}" alt="Riof" class="w-8 h-8 rounded-lg">
+                    <span class="text-lg font-extrabold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">Riof Admin</span>
+                </a>
             </div>
             <nav class="p-3 space-y-1">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-400 hover:text-white hover:bg-white/5 transition-all">

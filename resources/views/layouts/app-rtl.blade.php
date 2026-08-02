@@ -7,6 +7,10 @@
     <meta name="description" content="{{ $seo['description'] ?? config('seo.default_description') }}">
     <meta name="keywords" content="{{ $seo['keywords'] ?? config('seo.default_keywords') }}">
     <link rel="canonical" href="{{ $seo['canonical'] ?? url()->current() }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-mark.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <meta name="theme-color" content="#6366f1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -39,7 +43,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-8">
-                    <a href="{{ route('home') }}" class="text-xl font-extrabold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">ريوف</a>
+                    <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+                        <img src="{{ asset('images/logo-mark.svg') }}" alt="ريوف" class="w-8 h-8 rounded-lg">
+                        <span class="text-xl font-extrabold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">ريوف</span>
+                    </a>
                     <div class="hidden md:flex items-center gap-1">
                         <a href="{{ route('products.index') }}" class="px-3 py-2 text-sm text-muted-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200">{{ __('Products') }}</a>
                         <a href="{{ route('cart.index') }}" class="relative px-3 py-2 text-sm text-muted-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200">
