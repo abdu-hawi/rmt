@@ -220,12 +220,12 @@ it('returns pending status when Redis has no callback data', function () {
         ->assertJson(['status' => 'pending']);
 });
 
-it('returns completed status when Redis has callback data and clears cart', function () {
+it('returns completed status when Redis has successful callback data and clears cart', function () {
     $product = Product::first();
     $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
 
     Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
-        Mockery::mock(['get' => json_encode(['result' => 'SUCCESS'])])
+        Mockery::mock(['get' => json_encode(['action' => 'SALE', 'result' => 'SUCCESS', 'status' => 'SETTLED'])])
     );
 
     $order = Order::create([
@@ -242,6 +242,36 @@ it('returns completed status when Redis has callback data and clears cart', func
         ->assertJsonPath('status', 'completed');
 
     expect($this->cart->isEmpty())->toBeTrue();
+});
+
+it('returns failed status when Redis has declined callback data and keeps cart', function () {
+    $product = Product::first();
+    $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
+
+    Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
+        Mockery::mock(['get' => json_encode([
+            'action' => 'SALE', 'result' => 'DECLINED', 'status' => 'ERROR',
+            'decline_reason' => 'AUTHENTICATION_UNSUCCESSFUL',
+        ])])
+    );
+
+    $order = Order::create([
+        'order_number' => 'TESTORD123460',
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => 'St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+        'currency' => 'usd', 'subtotal' => 100, 'total' => 100,
+    ]);
+
+    $this->get(route('checkout.payment.status', $order->order_number))
+        ->assertOk()
+        ->assertJsonPath('status', 'failed')
+        ->assertJsonPath('message', 'Payment failed: AUTHENTICATION_UNSUCCESSFUL');
+
+    $order->refresh();
+    expect($order->status)->toBe('pending');
+    expect($this->cart->isEmpty())->toBeFalse();
 });
 
 it('queries gateway directly via fallback when Redis is empty', function () {

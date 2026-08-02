@@ -212,12 +212,33 @@ class PaymentGatewayController extends Controller
         $redisData = Redis::connection('payments_conn')->get("paymentGatewayCallback:{$order->id}");
 
         if ($redisData) {
-            $this->markOrderCompleted($order);
+            $callbackData = json_decode($redisData, true) ?: [];
+
+            $action = strtoupper($callbackData['action'] ?? '');
+            $result = strtoupper($callbackData['result'] ?? '');
+            $status = strtoupper($callbackData['status'] ?? '');
+
+            // النجاح فقط عندما تكون العملية SALE + SUCCESS + SETTLED
+            if ($action === 'SALE' && $result === 'SUCCESS' && $status === 'SETTLED') {
+                $this->markOrderCompleted($order);
+
+                return response()->json([
+                    'status' => 'completed',
+                    'source' => 'redis',
+                    'data'   => $callbackData
+                ]);
+            }
+
+            // أي حالة أخرى (DECLINED / ERROR / pending) تعتبر فشل
+            $declineReason = $callbackData['decline_reason'] ?? null;
 
             return response()->json([
-                'status' => 'completed',
-                'source' => 'redis',
-                'data'   => json_decode($redisData, true)
+                'status'  => 'failed',
+                'source'  => 'redis',
+                'message' => $declineReason
+                    ? __("payment_gatways.payment_failed") . ": " . $declineReason
+                    : __("payment_gatways.payment_failed"),
+                'data'    => $callbackData
             ]);
         }
 
@@ -320,17 +341,17 @@ class PaymentGatewayController extends Controller
                 ]
             );
 
-            // 3. التمرير لـ Redis في حال النجاح فقط باستعمال Order::id الداخلي
-            if ($action === 'SALE' && $result === 'SUCCESS' && $status === 'SETTLED') {
-                $callbackData['paymentGatewayId'] = $cardBrand;
-                $callbackData['orderPaymentId']   = $orderPayment->id;
+            // 3. حفظ العائد من بوابة الدفع في Redis مهما كانت حالة الدفع
+            //    باستعمال Order::id الداخلي، لمدة دقيقة واحدة فقط لأن صفحة
+            //    المعالجة تستعلم مباشرة من البوابة بعد 30 ثانية (fallback).
+            $callbackData['paymentGatewayId'] = $cardBrand;
+            $callbackData['orderPaymentId']   = $orderPayment->id;
 
-                Redis::connection('payments_conn')->setex(
-                    "paymentGatewayCallback:{$order_id}",
-                    18000,
-                    json_encode($callbackData)
-                );
-            }
+            Redis::connection('payments_conn')->setex(
+                "paymentGatewayCallback:{$order_id}",
+                60,
+                json_encode($callbackData)
+            );
 
             return response('OK', 200)->header('Content-Type', 'text/plain');
         } catch (\Throwable $th) {
