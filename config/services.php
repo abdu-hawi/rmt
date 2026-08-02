@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'edfapay' => [
+        'merchant_id'       => env('EDFAPAY_MERCHANT_ID'),
+        'merchant_password' => env('EDFAPAY_MERCHANT_PASSWORD'),
+        'initiate_url'      => env('EDFAPAY_INITIATE_URL', 'https://api.edfapay.com/payment/initiate'),
+        'status_url'        => env('EDFAPAY_STATUS_URL', 'https://api.edfapay.com/payment/status'),
+    ],
+
 ];

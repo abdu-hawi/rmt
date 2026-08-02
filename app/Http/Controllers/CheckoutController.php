@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Services\CartService;
 use App\Services\CurrencyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -61,7 +62,7 @@ class CheckoutController extends Controller
             $coupon = $this->cart->appliedCoupon();
 
             $order = Order::create([
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'currency' => $currency,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
@@ -99,5 +100,10 @@ class CheckoutController extends Controller
             Log::error('Checkout failed', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', __('An error occurred. Please try again.'));
         }
+    }
+
+    public function processing(Request $request, $order_id)
+    {
+        return view('checkout.processing', compact('order_id'));
     }
 }

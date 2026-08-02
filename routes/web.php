@@ -5,6 +5,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PaymentGatewayController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProductController::class, 'index'])->name('home');
@@ -20,6 +21,7 @@ Route::post('/cart/coupon/remove', [CartController::class, 'removeCoupon'])->nam
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/processing/{order_id}', [CheckoutController::class, 'processing'])->name('checkout.processing');
 
 Route::get('/order/{orderNumber}', [OrderController::class, 'confirmation'])->name('orders.confirmation');
 Route::post('/order/lookup', [OrderController::class, 'lookup'])->name('orders.lookup');
@@ -30,5 +32,9 @@ Route::get('/currency/{currency}', [LanguageController::class, 'currency'])->nam
 Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+
+Route::post('pay_callback', [PaymentGatewayController::class, 'handleCallback'])->name('edfapay.callback');
+Route::match(['GET', 'POST'], 'edfapay-success', [PaymentGatewayController::class, 'paymentSuccess'])->name('edfapay.success');
+Route::match(['GET', 'POST'], 'edfapay-failed', [PaymentGatewayController::class, 'paymentFailed'])->name('edfapay.failed');
 
 require __DIR__.'/admin.php';
