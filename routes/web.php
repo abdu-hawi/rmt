@@ -21,7 +21,8 @@ Route::post('/cart/coupon/remove', [CartController::class, 'removeCoupon'])->nam
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::get('/checkout/processing/{order_id}', [CheckoutController::class, 'processing'])->name('checkout.processing');
+Route::get('/checkout/processing/{order_number}', [CheckoutController::class, 'processing'])->name('checkout.processing');
+Route::get('/checkout/processing/{order_number}/status', [PaymentGatewayController::class, 'checkPaymentStatusAjax'])->name('checkout.payment.status');
 
 Route::get('/order/{orderNumber}', [OrderController::class, 'confirmation'])->name('orders.confirmation');
 Route::post('/order/lookup', [OrderController::class, 'lookup'])->name('orders.lookup');

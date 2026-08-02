@@ -4,6 +4,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redis;
 
 uses(RefreshDatabase::class);
 
@@ -13,6 +15,20 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\ProductSeeder::class);
     $this->cart = app(CartService::class);
     $this->cart->clear();
+
+    Http::fake([
+        'api.edfapay.com/payment/initiate' => Http::response([
+            'redirect_url' => 'https://checkout.edfapay.test/pay/123',
+        ], 200),
+        'api.edfapay.com/payment/status' => Http::response([
+            'status' => 'SETTLED',
+        ], 200),
+    ]);
+
+    config([
+        'services.edfapay.merchant_id' => 'test_merchant',
+        'services.edfapay.merchant_password' => 'test_secret',
+    ]);
 });
 
 it('shows checkout page with items in cart', function () {
@@ -131,4 +147,117 @@ it('shows order confirmation page', function () {
     $this->get(route('orders.confirmation', $order->order_number))
         ->assertStatus(200)
         ->assertSee($order->order_number);
+});
+
+it('redirects to payment gateway after checkout and stores order', function () {
+    $product = Product::first();
+    $this->post(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1]);
+
+    $response = $this->post(route('checkout.store'), [
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => '123 St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+    ]);
+
+    $response->assertRedirect('https://checkout.edfapay.test/pay/123');
+
+    $order = Order::first();
+    expect($order)->not->toBeNull();
+    expect($order->status)->toBe('pending');
+    expect($this->cart->isEmpty())->toBeTrue();
+});
+
+it('sends SAR amount to payment gateway when cart currency is USD', function () {
+    session()->put('currency', 'usd');
+    $product = Product::first();
+    $this->cart->add($product, 1);
+
+    $this->post(route('checkout.store'), [
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => '123 St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+    ]);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.edfapay.com/payment/initiate'
+            && $request['order_currency'] === 'SAR';
+    });
+});
+
+it('shows processing page', function () {
+    $order = Order::create([
+        'order_number' => 'TESTORD123456',
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => 'St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+        'currency' => 'usd', 'subtotal' => 100, 'total' => 100,
+    ]);
+
+    $this->get(route('checkout.processing', $order->order_number))
+        ->assertStatus(200)
+        ->assertSee($order->order_number);
+});
+
+it('returns pending status when Redis has no callback data', function () {
+    Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
+        Mockery::mock(['get' => null])
+    );
+
+    $order = Order::create([
+        'order_number' => 'TESTORD123457',
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => 'St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+        'currency' => 'usd', 'subtotal' => 100, 'total' => 100,
+    ]);
+
+    $this->get(route('checkout.payment.status', $order->order_number))
+        ->assertOk()
+        ->assertJson(['status' => 'pending']);
+});
+
+it('returns completed status when Redis has callback data', function () {
+    Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
+        Mockery::mock(['get' => json_encode(['result' => 'SUCCESS'])])
+    );
+
+    $order = Order::create([
+        'order_number' => 'TESTORD123458',
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => 'St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+        'currency' => 'usd', 'subtotal' => 100, 'total' => 100,
+    ]);
+
+    $this->get(route('checkout.payment.status', $order->order_number))
+        ->assertOk()
+        ->assertJsonPath('status', 'completed');
+});
+
+it('queries gateway directly via fallback when Redis is empty', function () {
+    Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
+        Mockery::mock(['get' => null])
+    );
+
+    $order = Order::create([
+        'order_number' => 'TESTORD123459',
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => 'St', 'payer_country' => 'US',
+        'payer_city' => 'NY', 'payer_email' => 'j@t.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+        'currency' => 'usd', 'subtotal' => 100, 'total' => 100,
+    ]);
+
+    $this->get(route('checkout.payment.status', ['order_number' => $order->order_number, 'fallback' => 'true']))
+        ->assertOk()
+        ->assertJsonPath('status', 'completed')
+        ->assertJsonPath('source', 'api_status');
+
+    $order->refresh();
+    expect($order->status)->toBe('completed');
 });

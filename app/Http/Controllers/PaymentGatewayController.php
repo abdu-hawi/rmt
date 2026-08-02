@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\PaymentOrder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -131,18 +132,64 @@ class PaymentGatewayController extends Controller
         return sha1(md5(strtoupper($stringToConcatenate)));
     }
 
+    /**
+     * استعلام مباشر عن حالة الدفع من بوابة EdfaPay
+     * (يُستخدم كخطوة أخيرة إذا لم نجد البيانات في مفتاح Redis)
+     */
+    private function paymentStatus(string $order_number): ?array
+    {
+        try {
+            $statusUrl = $this->getEdfapayStatusUrl();
+
+            $payload = [
+                'action'           => 'SALE',
+                'edfa_merchant_id' => $this->getApiMerchantId(),
+                'order_id'         => $order_number,
+            ];
+
+            $payload['hash'] = $this->calculateEdfaPayStatusHash($payload);
+
+            $response = Http::asForm()->post($statusUrl, $payload);
+
+            if (!$response->successful()) {
+                Log::channel("edfaPay")->warning('Edfapay paymentStatus http error', [
+                    'order_id'   => $order_number,
+                    'status'     => $response->status(),
+                    'body'       => $response->body(),
+                ]);
+                return null;
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::channel("edfaPay")->error('Edfapay paymentStatus exception', [
+                'order_id'      => $order_number,
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    private function calculateEdfaPayStatusHash(array $data): string
+    {
+        $stringToConcatenate =
+            ($data['order_id'] ?? '') .
+            $this->getApiMerchantPassword();
+
+        return sha1(md5(strtoupper($stringToConcatenate)));
+    }
+
     public function paymentSuccess(Request $request)
     {
-        $order_number = $request->query('order_number');
+        $order_number = $request->query('order_number') ?? $request->input('order_number');
 
-        return redirect()->route('checkout.processing')->with([
-            'order_number' => $order_number
-        ]);
+        return redirect()->route('checkout.processing', ['order_number' => $order_number]);
     }
 
     public function checkPaymentStatusAjax(Request $request)
     {
-        $order_number = $request->query('order_number');
+        $order_number = $request->query('order_number') ?? $request->route('order_number');
         $isFallback   = $request->query('fallback') === 'true';
 
         if (!$order_number) {
@@ -160,6 +207,8 @@ class PaymentGatewayController extends Controller
         $redisData = Redis::connection('payments_conn')->get("paymentGatewayCallback:{$order->id}");
 
         if ($redisData) {
+            $this->markOrderCompleted($order);
+
             return response()->json([
                 'status' => 'completed',
                 'source' => 'redis',
@@ -172,6 +221,8 @@ class PaymentGatewayController extends Controller
             $statusResponse = $this->paymentStatus($order_number);
 
             if ($statusResponse && strtoupper($statusResponse['status'] ?? '') === 'SETTLED') {
+                $this->markOrderCompleted($order);
+
                 return response()->json([
                     'status' => 'completed',
                     'source' => 'api_status',
@@ -186,6 +237,17 @@ class PaymentGatewayController extends Controller
         }
 
         return response()->json(['status' => 'pending']);
+    }
+
+    private function markOrderCompleted(\App\Models\Order $order): void
+    {
+        if ($order->status !== 'completed') {
+            $order->update(['status' => 'completed']);
+            Log::channel("edfaPay")->info('Order marked as completed', [
+                'order_id'      => $order->id,
+                'order_number'  => $order->order_number,
+            ]);
+        }
     }
 
     public function paymentFailed(Request $request)
@@ -219,19 +281,24 @@ class PaymentGatewayController extends Controller
         $action    = $callbackData['action'] ?? null;
         $result    = $callbackData['result'] ?? null;
         $status    = $callbackData['status'] ?? null;
-        $order_id  = $callbackData['order_id'] ?? null;
+        $order_number = $callbackData['order_id'] ?? null;
         $trans_id  = $callbackData['trans_id'] ?? null;
         $amount    = $callbackData['amount'] ?? null;
         $cardBrand = $callbackData['card_brand'] ?? null;
         $rrn       = $callbackData['rrn'] ?? null;
 
-        if (!$order_id) {
+        if (!$order_number) {
             Log::error('Edfapay handleCallback: Missing order_id', $callbackData);
             return response('ERROR', 400)->header('Content-Type', 'text/plain');
         }
 
+        // المفتاح القادم من البوابة هو order_number (علاقة الطرف الثالث)
+        // نعرّف الداخلي Order::id للعلاقات الداخلية ومفتاح Redis
+        $order = Order::where('order_number', $order_number)->first();
+        $order_id = $order ? $order->id : $order_number;
+
         try {
-            // 2. تسجيل العملية دائماً
+            // 2. تسجيل العملية دائماً (PaymentOrder.order_id = Order::id الداخلي)
             $orderPayment = PaymentOrder::updateOrCreate(
                 ['trans_id' => $trans_id],
                 [
@@ -246,7 +313,7 @@ class PaymentGatewayController extends Controller
                 ]
             );
 
-            // 3. التمرير لـ Redis في حال النجاح فقط
+            // 3. التمرير لـ Redis في حال النجاح فقط باستعمال Order::id الداخلي
             if ($action === 'SALE' && $result === 'SUCCESS' && $status === 'SETTLED') {
                 $callbackData['paymentGatewayId'] = $cardBrand;
                 $callbackData['orderPaymentId']   = $orderPayment->id;
@@ -261,7 +328,7 @@ class PaymentGatewayController extends Controller
             return response('OK', 200)->header('Content-Type', 'text/plain');
         } catch (\Throwable $th) {
             Log::error('Edfapay handleCallback: Exception during process', [
-                'merchantOrderId' => $order_id,
+                'merchantOrderId' => $order_number,
                 'error_message'   => $th->getMessage()
             ]);
 

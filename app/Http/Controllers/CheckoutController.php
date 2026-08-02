@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Log;
 class CheckoutController extends Controller
 {
     public function __construct(
-        protected CartService $cart
+        protected CartService $cart,
+        protected PaymentGatewayController $paymentGateway
     ) {}
 
     public function index()
@@ -93,8 +94,24 @@ class CheckoutController extends Controller
 
             Log::info('Order placed', ['order_number' => $order->order_number, 'total' => $total, 'currency' => $currency]);
 
-            return redirect()->route('orders.confirmation', $order->order_number)
-                ->with('success', __('Order placed successfully'));
+            // 1. تحويل مبلغ الطلب إلى ريال سعودي دائماً لأن بوابة الدفع تقبل SAR فقط
+            //    (Order::order_number يُستخدم للعلاقات مع الطرف الثالث، و Order::id للعلاقات الداخلية)
+            $amountSar = $currency === CurrencyService::SAR
+                ? $total
+                : CurrencyService::convert($total, CurrencyService::SAR);
+
+            // 2. تمرير بيانات الطلب إلى بوابة الدفع (begin_checkout)
+            return $this->paymentGateway->paymentProcess([
+                'order_id'     => $order->id,
+                'order_number' => $order->order_number,
+                'amount'       => $amountSar,
+                'description'  => __('Order') . ' #' . $order->order_number,
+                'email'        => $validated['payer_email'],
+                'address'      => $validated['payer_address'],
+                'city_name'    => $validated['payer_city'],
+                'phoneNumber'  => $validated['payer_phone'],
+                'postal'       => $validated['payer_zip'],
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Checkout failed', ['error' => $e->getMessage()]);
@@ -102,8 +119,10 @@ class CheckoutController extends Controller
         }
     }
 
-    public function processing(Request $request, $order_id)
+    public function processing(Request $request, $order_number)
     {
-        return view('checkout.processing', compact('order_id'));
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+
+        return view('checkout.processing', compact('order', 'order_number'));
     }
 }

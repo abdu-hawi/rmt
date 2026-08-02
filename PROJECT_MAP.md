@@ -13,7 +13,7 @@
 | **Localization** | Laravel `lang/` JSON files (en, ar) |
 | **Rendering** | Server-side Blade with RTL/LTR layout switching |
 | **Logging** | Laravel Monolog (`daily` channel) |
-| **Testing** | Pest 4.x — **46 tests, 102 assertions (all passing)** |
+| **Testing** | Pest 4.x — **56 tests, 130 assertions (all passing)** |
 
 **System Date (verified)**: 2026-07-30  
 **PHP**: 8.3.14 ✓ | **Composer**: 2.8.10 ✓ | **Laravel**: 13.23.0 ✓
@@ -29,8 +29,10 @@ User (Guest or Registered)
   │     ├─ Product Catalog (filter, search, category filter)
   │     ├─ Product Detail (SEO meta, JSON-LD, dual pricing, features)
   │     ├─ Cart (session-based, coupon support)
-  │     └─ Checkout (guest/registered, 8 mandatory payer fields)
-  │           └─ Order Confirmation
+  │     ├─ Checkout (guest/registered, 8 mandatory payer fields)
+  │     │     └─ EdfaPay payment gateway (SAR-only, 3DS redirect)
+  │     │           └─ Processing page (AJAX poll → Redis → fallback status)
+  │     └─ Order Confirmation
   │
   ├─► Currency Switcher (USD / SAR) — top-bar toggle
   ├─► Language Switcher (English / Arabic) — RTL/LTR flip
@@ -63,7 +65,8 @@ app/
 │   │   │   └── LoginController.php
 │   │   ├── ProductController.php
 │   │   ├── CartController.php
-│   │   ├── CheckoutController.php
+│   │   ├── CheckoutController.php  (store → PaymentGatewayController)
+│   │   ├── PaymentGatewayController.php (EdfaPay: initiate, callback, status)
 │   │   ├── OrderController.php
 │   │   └── LanguageController.php
 │   ├── Middleware/
@@ -74,25 +77,27 @@ app/
 ├── Models/
 │   ├── User.php
 │   ├── Product.php
-│   ├── Order.php
+│   ├── Order.php                 (id → internal relations; order_number → 3rd-party/customer)
 │   ├── OrderItem.php
+│   ├── PaymentOrder.php          (gateway transactions, belongsTo Order)
 │   ├── Category.php
 │   ├── Coupon.php
 │   └── Setting.php
 ├── Services/
 │   ├── CurrencyService.php       (convert, format, switch)
-│   ├── CartService.php           (add, remove, coupon, totals)
+│   ├── CartService.php           (add, remove, coupon, ZATCA totals)
 │   └── SeoService.php            (OG, Schema.org, canonical)
 └── Helpers/
     └── helpers.php               (format_price, is_rtl, currency)
 
 config/
 ├── currency.php                  (rate, symbols, names)
+├── tax.php                       (ZATCA VAT 15%)
 └── seo.php                       (defaults, site info)
 
 lang/
-├── en.json                       (English translations)
-└── ar.json                       (Arabic translations)
+├── en.json, en/payment_gatways.php
+└── ar.json, ar/payment_gatways.php
 
 resources/views/
 ├── layouts/
@@ -102,6 +107,7 @@ resources/views/
 ├── products/index.blade.php, show.blade.php
 ├── cart/index.blade.php
 ├── checkout/index.blade.php
+├── checkout/processing.blade.php (AJAX poll 2s ×15 → fallback status)
 ├── orders/confirmation.blade.php
 └── admin/
     ├── layouts/admin.blade.php
@@ -113,7 +119,7 @@ resources/views/
     └── settings/index.blade.php
 
 routes/
-├── web.php                       (public routes + auth)
+├── web.php                       (public routes + auth + EdfaPay + status)
 └── admin.php                     (admin prefix, auth+admin middleware)
 ```
 
@@ -134,10 +140,50 @@ orders           → id, order_number (unique), user_id (nullable FK),
 
 order_items      → id, order_id (FK), product_id (FK), product_name, price, quantity
 
+payment_orders   → id, order_id (string index → Order::id), trans_id (unique), rrn,
+                   action, result, status (pending/completed/failed), amount,
+                   card_brand, payload (json), timestamps
+
 coupons          → id, code (unique), type (enum), value, min_order_amount,
                    max_uses, used_count, expires_at, is_active
 
 settings         → id, key (unique), value
+```
+
+> **Redis (`payments_conn`)** — Payment Gateway Callback Bridge:
+> - `paymentGatewayCallback:{order_id}` → set by `handleCallback`, TTL 18000s, JSON callback payload (uses **internal** `Order::id`)
+> - `edfapay_email_{order_number}` → payer email cached for callback hash verification, TTL 86400s
+
+---
+
+## [PAYMENT FLOW (EdfaPay — ZATCA Compliant)]
+
+```
+1. CheckoutController::store()
+     ├─ validate payer fields (8 mandatory)
+     ├─ create Order + OrderItems (totals stored in selected currency)
+     ├─ commit transaction + clear cart
+     └─ PaymentGatewayController::paymentProcess([...])
+           ├─ amount ALWAYS converted to SAR (SAR base for gateway)
+           ├─ order_id (payload) = Order::order_number (3rd-party identifier)
+           ├─ success_url = route('edfapay.success', ['order_number' => ...])
+           └─ redirect to gateway redirect_url (3DS)
+
+2. Gateway → User returns via success_url
+     └─ paymentSuccess() → redirect route('checkout.processing', order_number)
+
+3. processing.blade.php (site-identity loading UI, RTL/LTR)
+     └─ AJAX poll every 2s (max 15 attempts) → route('checkout.payment.status')
+           ├─ server: Redis::payments_conn get "paymentGatewayCallback:{Order::id}"
+           │         → if found → status=completed → order marked completed
+           └─ after 15 attempts w/ no Redis data → fallback=true
+                    → PaymentGatewayController::checkPaymentStatusAjax()
+                    → direct paymentStatus() API query (SETTLED → completed)
+
+4. Gateway callback (server-to-server) → route('edfapay.callback')
+     └─ verifyEdfaPayCallbackHash() (email + merchant pass + trans + card)
+     ├─ PaymentOrder::updateOrCreate(trans_id) — order_id = internal Order::id
+     └─ on SALE+SUCCESS+SETTLED → Redis setex "paymentGatewayCallback:{Order::id}"
 ```
 
 ---
@@ -151,17 +197,18 @@ settings         → id, key (unique), value
 | # | Milestone | Status | Verification |
 |---|-----------|--------|-------------|
 | 1 | Planning & Architecture | ✅ | PROJECT_MAP.md approved |
-| 2 | Database Schema (6 migrations) | ✅ | `php artisan migrate` |
+| 2 | Database Schema (7 migrations) | ✅ | `php artisan migrate` |
 | 3 | Eloquent Models + relationships | ✅ | All relations wired |
 | 4 | Localization (en.json + ar.json) | ✅ | 130+ translation keys each |
 | 5 | Seeders (4 products, EN/AR, SEO) | ✅ | `php artisan db:seed` |
 | 6 | Services (Currency, Cart, Seo) | ✅ | Feature-tested |
 | 7 | Middleware (Localize, Currency, Admin) | ✅ | Registered in bootstrap/app.php |
-| 8 | Routes (41 routes) + Controllers (11) | ✅ | `php artisan route:list` |
-| 9 | Blade Views (18 views, RTL/LTR) | ✅ | Full admin panel included |
-| 10 | Tests (50 passing, 114 assertions) | ✅ | `php artisan test` |
+| 8 | Routes (43 routes) + Controllers (12) | ✅ | `php artisan route:list` |
+| 9 | Blade Views (19 views, RTL/LTR) | ✅ | Full admin panel included |
+| 10 | Tests (56 passing, 130 assertions) | ✅ | `php artisan test` |
 | 11 | ZATCA VAT Compliance (15%) | ✅ | config/tax.php, orders.vat, CartService taxable/vat, VAT breakdown UI + tests |
+| 12 | EdfaPay Payment Integration | ✅ | paymentProcess (SAR-only), callback → Redis → AJAX polling ×15 → fallback status, PaymentOrder + processing page |
 
 ---
 
-*Last updated: 2026-08-01 — ZATCA VAT compliance added. All milestones complete. ✅*
+*Last updated: 2026-08-02 — EdfaPay payment gateway integration completed. All milestones complete. ✅*
