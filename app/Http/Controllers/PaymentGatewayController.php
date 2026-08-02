@@ -108,7 +108,7 @@ class PaymentGatewayController extends Controller
                 'payment_error' => __("payment_gatways.payment_initialization_failed") . ": " . $errorMsg . " (Code: {$errorCode})"
             ]);
         } catch (\Exception $e) {
-            Log::channel("edfaPay")->error('Edfapay paymentProcess exception', [
+            Log::error('Edfapay paymentProcess exception', [
                 'error_message' => $e->getMessage(),
                 'error_code'    => $e->getCode(),
                 'trace'         => $e->getTraceAsString(),
@@ -152,7 +152,7 @@ class PaymentGatewayController extends Controller
             $response = Http::asForm()->post($statusUrl, $payload);
 
             if (!$response->successful()) {
-                Log::channel("edfaPay")->warning('Edfapay paymentStatus http error', [
+                Log::warning('Edfapay paymentStatus http error', [
                     'order_id'   => $order_number,
                     'status'     => $response->status(),
                     'body'       => $response->body(),
@@ -162,7 +162,7 @@ class PaymentGatewayController extends Controller
 
             return $response->json();
         } catch (\Exception $e) {
-            Log::channel("edfaPay")->error('Edfapay paymentStatus exception', [
+            Log::error('Edfapay paymentStatus exception', [
                 'order_id'      => $order_number,
                 'error_message' => $e->getMessage(),
             ]);
@@ -243,7 +243,7 @@ class PaymentGatewayController extends Controller
     {
         if ($order->status !== 'completed') {
             $order->update(['status' => 'completed']);
-            Log::channel("edfaPay")->info('Order marked as completed', [
+            Log::info('Order marked as completed', [
                 'order_id'      => $order->id,
                 'order_number'  => $order->order_number,
             ]);

@@ -84,6 +84,39 @@
 
         .notice.danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.30); }
 
+        .actions {
+            margin-top: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #5556e8; transform: translateY(-1px); }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+        .btn svg { flex-shrink: 0; }
+
         .footer {
             margin-top: 28px;
             display: flex;
@@ -141,6 +174,17 @@
                     <p class="desc">We could not confirm your payment. You can retry from your cart.</p>
                     <div class="notice danger" id="failed-message"></div>
                 @endif
+
+                <div class="actions">
+                    <a class="btn btn-primary" href="{{ route('cart.index') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                        {{ app()->getLocale() === 'ar' ? 'العودة إلى سلة التسوق' : 'Back to Cart' }}
+                    </a>
+                    <a class="btn btn-ghost" href="{{ route('products.index') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10"/></svg>
+                        {{ app()->getLocale() === 'ar' ? 'العودة إلى الرئيسية' : 'Back to Home' }}
+                    </a>
+                </div>
             </div>
 
             <div class="footer">
