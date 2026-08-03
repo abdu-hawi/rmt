@@ -39,6 +39,13 @@
     @vite(['resources/css/app.css'])
 </head>
 <body>
+    @php
+        $cartService = app(\App\Services\CartService::class);
+        $cartCount = $cartService->count();
+        $cartItems = $cartService->items();
+        $cartSubtotal = $cartService->subtotal();
+        $currentCurrency = \App\Services\CurrencyService::current();
+    @endphp
     <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-16">
@@ -49,25 +56,88 @@
                     </a>
                     <div class="hidden md:flex items-center gap-1">
                         <a href="{{ route('products.index') }}" class="px-3 py-2 text-sm text-muted-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200">{{ __('Products') }}</a>
-                        <a href="{{ route('cart.index') }}" class="relative px-3 py-2 text-sm text-muted-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200">
-                            {{ __('Cart') }}
-                            @php $cartCount = app(\App\Services\CartService::class)->count(); @endphp
-                            @if($cartCount > 0)
-                                <span class="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full">{{ $cartCount }}</span>
-                            @endif
-                        </a>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1.5 bg-carbon-900/60 rounded-lg p-1 border border-slate-700/30">
-                        <a href="{{ route('lang.switch', 'en') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app()->getLocale() === 'en' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">EN</a>
-                        <a href="{{ route('lang.switch', 'ar') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app()->getLocale() === 'ar' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}" style="font-family: 'Cairo', sans-serif;">AR</a>
+                <div class="flex items-center gap-2">
+
+                    <div data-dropdown class="relative lg:hidden">
+<button type="button" data-dropdown-toggle class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Language">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                        </button>
+                        <div data-dropdown-menu class="hidden absolute end-0 top-11 w-44 bg-carbon-900/95 border border-slate-700/40 rounded-xl shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden z-50">
+                            <a href="{{ route('lang.switch', 'en') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all {{ app()->getLocale() === 'en' ? 'text-white bg-white/5' : 'text-muted-400 hover:text-white hover:bg-white/5' }}">
+                                <span class="w-2 h-2 rounded-full {{ app()->getLocale() === 'en' ? 'bg-accent' : 'bg-slate-600' }}"></span>
+                                English
+                            </a>
+                            <a href="{{ route('lang.switch', 'ar') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all {{ app()->getLocale() === 'ar' ? 'text-white bg-white/5' : 'text-muted-400 hover:text-white hover:bg-white/5' }}" style="font-family: 'Cairo', sans-serif;">
+                                <span class="w-2 h-2 rounded-full {{ app()->getLocale() === 'ar' ? 'bg-accent' : 'bg-slate-600' }}"></span>
+                                العربية
+                            </a>
+                        </div>
                     </div>
 
-                    <div class="flex items-center gap-1.5 bg-carbon-900/60 rounded-lg p-1 border border-slate-700/30">
-                        <a href="{{ route('currency.switch', 'usd') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app(\App\Services\CurrencyService::class)::current() === 'usd' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">{{ __('USD') }}</a>
-                        <a href="{{ route('currency.switch', 'sar') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app(\App\Services\CurrencyService::class)::current() === 'sar' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">{{ __('SAR') }}</a>
+                    <div class="hidden lg:flex items-center gap-1.5 bg-carbon-900/60 rounded-lg p-1 border border-slate-700/30">
+                        <a href="{{ route('lang.switch', 'en') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app()->getLocale() === 'en' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">EN</a>
+                        <a href="{{ route('lang.switch', 'ar') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ app()->getLocale() === 'ar' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">AR</a>
+                    </div>
+
+                    <div data-dropdown class="relative lg:hidden">
+                        <button type="button" data-dropdown-toggle class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Currency">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-currency-exchange" viewBox="0 0 16 16">
+  <path d="M0 5a5 5 0 0 0 4.027 4.905 6.5 6.5 0 0 1 .544-2.073C3.695 7.536 3.132 6.864 3 5.91h-.5v-.426h.466V5.05q-.001-.07.004-.135H2.5v-.427h.511C3.236 3.24 4.213 2.5 5.681 2.5c.316 0 .59.031.819.085v.733a3.5 3.5 0 0 0-.815-.082c-.919 0-1.538.466-1.734 1.252h1.917v.427h-1.98q-.004.07-.003.147v.422h1.983v.427H3.93c.118.602.468 1.03 1.005 1.229a6.5 6.5 0 0 1 4.97-3.113A5.002 5.002 0 0 0 0 5m16 5.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0m-7.75 1.322c.069.835.746 1.485 1.964 1.562V14h.54v-.62c1.259-.086 1.996-.74 1.996-1.69 0-.865-.563-1.31-1.57-1.54l-.426-.1V8.374c.54.06.884.347.966.745h.948c-.07-.804-.779-1.433-1.914-1.502V7h-.54v.629c-1.076.103-1.808.732-1.808 1.622 0 .787.544 1.288 1.45 1.493l.358.085v1.78c-.554-.08-.92-.376-1.003-.787zm1.96-1.895c-.532-.12-.82-.364-.82-.732 0-.41.311-.719.824-.809v1.54h-.005zm.622 1.044c.645.145.943.38.943.796 0 .474-.37.8-1.02.86v-1.674z"/>
+</svg>
+                        </button>
+                        <div data-dropdown-menu class="hidden absolute end-0 top-11 w-44 bg-carbon-900/95 border border-slate-700/40 rounded-xl shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden z-50">
+                            <a href="{{ route('currency.switch', 'usd') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all {{ $currentCurrency === 'usd' ? 'text-white bg-white/5' : 'text-muted-400 hover:text-white hover:bg-white/5' }}">
+                                <span class="w-2 h-2 rounded-full {{ $currentCurrency === 'usd' ? 'bg-accent' : 'bg-slate-600' }}"></span>
+                                {{ __('USD') }}
+                            </a>
+                            <a href="{{ route('currency.switch', 'sar') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all {{ $currentCurrency === 'sar' ? 'text-white bg-white/5' : 'text-muted-400 hover:text-white hover:bg-white/5' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 1124.14 1256.39" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>
+                                <span class="w-2 h-2 rounded-full flex-shrink-0 {{ $currentCurrency === 'sar' ? 'bg-accent' : 'bg-slate-600' }}"></span>
+                                {{ __('SAR') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="hidden lg:flex items-center gap-1.5 bg-carbon-900/60 rounded-lg p-1 border border-slate-700/30">
+                        <a href="{{ route('currency.switch', 'usd') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ $currentCurrency === 'usd' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">{{ __('USD') }}</a>
+                        <a href="{{ route('currency.switch', 'sar') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ $currentCurrency === 'sar' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">{{ __('SAR') }}</a>
+                    </div>
+
+                    <div data-dropdown class="relative">
+                        <button type="button" data-dropdown-toggle class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Cart">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                            @if($cartCount > 0)
+                                <span class="absolute -top-1 -end-1 w-4 h-4 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full">{{ $cartCount }}</span>
+                            @endif
+                        </button>
+                        <div data-dropdown-menu class="hidden absolute end-0 top-11 w-72 bg-carbon-900/95 border border-slate-700/40 rounded-xl shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden z-50">
+                            <div class="px-4 py-2.5 border-b border-slate-700/30">
+                                <p class="text-xs font-semibold text-white">{{ __('Cart') }} ({{ $cartCount }})</p>
+                            </div>
+                            @if($cartCount > 0)
+                                <div class="max-h-56 overflow-y-auto">
+                                    @foreach($cartItems->take(3) as $item)
+                                        <div class="flex items-center justify-between px-4 py-2 text-sm">
+                                            <span class="text-white truncate flex-1 min-w-0">{{ $item['name'] }}</span>
+                                            <span class="text-muted-400 text-xs ms-2 flex-shrink-0">&times; {{ $item['quantity'] }}</span>
+                                        </div>
+                                    @endforeach
+                                    @if($cartItems->count() > 3)
+                                        <div class="px-4 py-1.5 text-xs text-muted-400">+{{ $cartItems->count() - 3 }} {{ __('more') }}</div>
+                                    @endif
+                                </div>
+                                <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-700/30 text-sm">
+                                    <span class="text-muted-400">{{ __('Total') }}</span>
+                                    <span class="text-white font-bold">{{ \App\Services\CurrencyService::format($cartSubtotal) }}</span>
+                                </div>
+                                <a href="{{ route('cart.index') }}" class="block px-4 py-2.5 text-center text-sm font-semibold text-white bg-accent hover:bg-accent/90 transition-all">{{ __('View Cart') }}</a>
+                            @else
+                                <div class="px-4 py-6 text-center text-sm text-muted-400">{{ __('Your cart is empty') }}</div>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="h-6 w-px bg-slate-700/50"></div>
@@ -116,6 +186,28 @@
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('[data-flash]').forEach(el => {
                 setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; }, 4000);
+            });
+
+            // Nav dropdowns (language / currency / cart)
+            function closeAllDropdowns(except) {
+                document.querySelectorAll('[data-dropdown-menu]').forEach(menu => {
+                    if (menu !== except) menu.classList.add('hidden');
+                });
+            }
+            document.querySelectorAll('[data-dropdown]').forEach(dd => {
+                const toggle = dd.querySelector('[data-dropdown-toggle]');
+                const menu = dd.querySelector('[data-dropdown-menu]');
+                if (!toggle || !menu) return;
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = !menu.classList.contains('hidden');
+                    closeAllDropdowns();
+                    if (!isOpen) menu.classList.remove('hidden');
+                });
+            });
+            document.addEventListener('click', () => closeAllDropdowns());
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeAllDropdowns();
             });
         });
     </script>
