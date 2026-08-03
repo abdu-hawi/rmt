@@ -107,10 +107,10 @@
                     </div>
 
                     <div data-dropdown class="relative">
-                        <button type="button" data-dropdown-toggle class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Cart">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                        <button type="button" data-dropdown-toggle id="cart-btn" class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Cart">
+                            <svg class="w-4 h-4 cart-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                             @if($cartCount > 0)
-                                <span class="absolute -top-1 -end-1 w-4 h-4 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full">{{ $cartCount }}</span>
+                                <span id="cart-count" class="absolute -top-1 -end-1 w-4 h-4 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full">{{ $cartCount }}</span>
                             @endif
                         </button>
                         <div data-dropdown-menu class="hidden absolute end-0 top-11 w-72 bg-carbon-900/95 border border-slate-700/40 rounded-xl shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden z-50">
@@ -209,7 +209,60 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') closeAllDropdowns();
             });
+
+            // Fly-to-Cart + badge bump (exposed globally for add-to-cart forms)
+            window.riofFlyToCart = function (fromRect) {
+                const btn = document.getElementById('cart-btn');
+                if (!btn) return;
+                const target = btn.getBoundingClientRect();
+                const startX = fromRect.left + fromRect.width / 2;
+                const startY = fromRect.top + fromRect.height / 2;
+                const endX = target.left + target.width / 2;
+                const endY = target.top + target.height / 2;
+
+                const fly = document.createElement('div');
+                fly.className = 'fly-to-cart-item';
+                fly.textContent = '+1';
+                fly.style.left = startX + 'px';
+                fly.style.top = startY + 'px';
+                document.body.appendChild(fly);
+
+                const dx = endX - startX;
+                const dy = endY - startY;
+
+                requestAnimationFrame(() => {
+                    fly.style.transition = 'transform 0.7s cubic-bezier(0.4, -0.3, 0.2, 1), opacity 0.7s ease';
+                    fly.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.2)';
+                    fly.style.opacity = '0.3';
+                });
+
+                setTimeout(() => {
+                    fly.remove();
+                    btn.classList.remove('cart-btn-bump');
+                    void btn.offsetWidth;
+                    btn.classList.add('cart-btn-bump');
+                }, 700);
+            };
+
+            window.riofUpdateCartCount = function (count) {
+                let badge = document.getElementById('cart-count');
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.id = 'cart-count';
+                        badge.className = 'absolute -top-1 -end-1 w-4 h-4 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full';
+                        document.getElementById('cart-btn').appendChild(badge);
+                    }
+                    badge.textContent = count;
+                    badge.classList.remove('cart-count-pop');
+                    void badge.offsetWidth;
+                    badge.classList.add('cart-count-pop');
+                } else if (badge) {
+                    badge.remove();
+                }
+            };
         });
     </script>
+    @yield('scripts')
 </body>
 </html>

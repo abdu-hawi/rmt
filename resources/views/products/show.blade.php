@@ -88,10 +88,10 @@
                             </div>
                         </div>
 
-                        <form method="POST" action="{{ route('cart.add') }}">
+                        <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form" data-ajax-add="1">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <button class="w-full py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg transition-all glow-border flex items-center justify-center gap-2">
+                            <button type="submit" class="w-full py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg transition-all glow-border flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                                 {{ __('Add to Cart' )}}
                             </button>
@@ -115,4 +115,46 @@
             @endif
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('add-to-cart-form');
+            if (!form || !form.dataset.ajaxAdd) return;
+
+            const btn = form.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> {{ __('Adding...') }}';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        const rect = btn.getBoundingClientRect();
+                        if (window.riofFlyToCart) window.riofFlyToCart(rect);
+                        if (window.riofUpdateCartCount) window.riofUpdateCartCount(data.count);
+                    }
+                })
+                .catch(function () {})
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                });
+            });
+        });
+    </script>
 @endsection

@@ -35,6 +35,14 @@ class CartController extends Controller
         $product = Product::findOrFail($request->product_id);
         $this->cart->add($product, $request->quantity ?? 1);
 
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'count' => $this->cart->count(),
+                'message' => __('Product added to cart'),
+            ]);
+        }
+
         return redirect()->back()->with('success', __('Product added to cart'));
     }
 
