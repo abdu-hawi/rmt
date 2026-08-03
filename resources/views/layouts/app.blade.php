@@ -42,8 +42,6 @@
     @php
         $cartService = app(\App\Services\CartService::class);
         $cartCount = $cartService->count();
-        $cartItems = $cartService->items();
-        $cartSubtotal = $cartService->subtotal();
         $currentCurrency = \App\Services\CurrencyService::current();
     @endphp
     <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-800/50">
@@ -106,39 +104,12 @@
                         <a href="{{ route('currency.switch', 'sar') }}" class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-200 {{ $currentCurrency === 'sar' ? 'bg-accent text-white' : 'text-muted-400 hover:text-white' }}">{{ __('SAR') }}</a>
                     </div>
 
-                    <div data-dropdown class="relative">
-                        <button type="button" data-dropdown-toggle id="cart-btn" class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Cart">
+                    <a href="{{ route('cart.index') }}" id="cart-btn" class="relative flex items-center justify-center w-9 h-9 rounded-lg bg-carbon-900/60 border border-slate-700/30 text-muted-400 hover:text-white hover:bg-white/5 transition-all" aria-label="Cart">
                             <svg class="w-4 h-4 cart-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                             @if($cartCount > 0)
                                 <span id="cart-count" class="absolute -top-1 -end-1 w-4 h-4 flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full">{{ $cartCount }}</span>
                             @endif
-                        </button>
-                        <div data-dropdown-menu class="hidden absolute end-0 top-11 w-72 bg-carbon-900/95 border border-slate-700/40 rounded-xl shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden z-50">
-                            <div class="px-4 py-2.5 border-b border-slate-700/30">
-                                <p class="text-xs font-semibold text-white">{{ __('Cart') }} ({{ $cartCount }})</p>
-                            </div>
-                            @if($cartCount > 0)
-                                <div class="max-h-56 overflow-y-auto">
-                                    @foreach($cartItems->take(3) as $item)
-                                        <div class="flex items-center justify-between px-4 py-2 text-sm">
-                                            <span class="text-white truncate flex-1 min-w-0">{{ $item['name'] }}</span>
-                                            <span class="text-muted-400 text-xs ms-2 flex-shrink-0">&times; {{ $item['quantity'] }}</span>
-                                        </div>
-                                    @endforeach
-                                    @if($cartItems->count() > 3)
-                                        <div class="px-4 py-1.5 text-xs text-muted-400">+{{ $cartItems->count() - 3 }} {{ __('more') }}</div>
-                                    @endif
-                                </div>
-                                <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-700/30 text-sm">
-                                    <span class="text-muted-400">{{ __('Total') }}</span>
-                                    <span class="text-white font-bold">{{ \App\Services\CurrencyService::format($cartSubtotal) }}</span>
-                                </div>
-                                <a href="{{ route('cart.index') }}" class="block px-4 py-2.5 text-center text-sm font-semibold text-white bg-accent hover:bg-accent/90 transition-all">{{ __('View Cart') }}</a>
-                            @else
-                                <div class="px-4 py-6 text-center text-sm text-muted-400">{{ __('Your cart is empty') }}</div>
-                            @endif
-                        </div>
-                    </div>
+                        </a>
 
                     <div class="h-6 w-px bg-slate-700/50"></div>
 
