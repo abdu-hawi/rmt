@@ -14,9 +14,9 @@
                     <div>
                         <div class="flex items-center gap-3 mb-4">
                             <span class="tech-tag">{{ __($product->type) }}</span>
-                            <span class="px-2.5 py-0.5 text-[10px] font-mono text-success bg-success/10 border border-success/20 rounded-full">{{ __('Instant Download') }}</span>
+                            <span class="px-2.5 py-0.5 text-[10px] text-success bg-success/10 border border-success/20 rounded-full">{{ __('Instant Download') }}</span>
                             @if($product->schema_type === 'SoftwareApplication')
-                                <span class="px-2.5 py-0.5 text-[10px] font-mono text-violet-accent bg-violet-accent/10 border border-violet-accent/20 rounded-full">Multi-Tenant</span>
+                                <span class="px-2.5 py-0.5 text-[10px] text-violet-accent bg-violet-accent/10 border border-violet-accent/20 rounded-full">{{ __('Multi-Tenant') }}</span>
                             @endif
                         </div>
                         <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-4">{{ $isAr ? $product->name_ar : $product->name_en }}</h1>
@@ -46,7 +46,7 @@
                             <svg class="w-5 h-5 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                             {{ __('Technical Specifications') }}
                         </h2>
-                        <div class="bg-deep-950/80 rounded-lg p-4 border border-slate-700/30 font-mono text-sm">
+                        <div class="bg-deep-950/80 rounded-lg p-4 border border-slate-700/30 font-mono text-sm" style="direction: ltr;">
                             <div class="flex items-center gap-2 mb-3">
                                 <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
                                 <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
