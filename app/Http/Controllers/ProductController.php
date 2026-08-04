@@ -27,8 +27,18 @@ class ProductController extends Controller
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->input('category')));
         }
 
-        $products = $query->orderBy('sort_order')->paginate(12);
+        $products = $query->orderBy('sort_order')->paginate(12)->withQueryString();
         $categories = Category::where('is_active', true)->orderBy('sort_order')->get();
+
+        if ($request->wantsJson()) {
+            $isAr = app()->getLocale() === 'ar';
+            $html = view('products.partials.card', ['products' => $products, 'isAr' => $isAr])->render();
+
+            return response()->json([
+                'html' => $html,
+                'next_page_url' => $products->nextPageUrl(),
+            ]);
+        }
 
         return view('products.index', compact('products', 'categories'));
     }

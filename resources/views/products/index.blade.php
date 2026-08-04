@@ -41,28 +41,66 @@
                     <a href="{{ route('products.index') }}" class="inline-block mt-4 text-sm text-accent-light hover:text-accent">{{ __('Clear filters') }}</a>
                 </div>
             @else
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($products as $product)
-                        <a href="{{ route('products.show', $product->slug) }}" class="group glass-card overflow-hidden hover:glow-border transition-all duration-300 hover:-translate-y-1">
-                            <div class="p-6">
-                                <div class="flex items-start justify-between mb-4">
-                                    <span class="tech-tag">{{ __($product->type) }}</span>
-                                    <span class="px-2 py-0.5 text-[10px] font-mono text-violet-accent bg-violet-accent/10 border border-violet-accent/20 rounded">{{ $product->schema_type }}</span>
-                                </div>
-                                <h2 class="text-lg font-bold text-white group-hover:text-accent-light transition-colors mb-2">{{ $isAr ? $product->name_ar : $product->name_en }}</h2>
-                                <p class="text-sm text-muted-400 line-clamp-2 mb-4 leading-relaxed">{{ $isAr ? $product->description_ar : $product->description_en }}</p>
-                                <div class="flex items-center justify-between pt-4 border-t border-slate-700/30">
-                                    <span class="text-xl font-bold text-accent-light">{{ format_price($product->price_usd) }}</span>
-                                    <span class="text-xs text-muted-400">{{ __('Instant Download') }}</span>
-                                </div>
-                            </div>
-                        </a>
-                    @endforeach
+                <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @include('products.partials.card', ['products' => $products, 'isAr' => $isAr])
                 </div>
-                <div class="mt-8">
-                    {{ $products->links() }}
+                <div id="products-loader" class="hidden mt-8 flex justify-center">
+                    <div class="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin"></div>
                 </div>
+                <div id="products-end" class="hidden mt-8 text-center text-muted-400 text-sm"></div>
+                <div id="products-sentinel"></div>
+                <noscript>
+                    <div class="mt-8">
+                        {{ $products->links() }}
+                    </div>
+                </noscript>
             @endif
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    @if(!$products->isEmpty() && $products->hasMorePages())
+        <script>
+            (function () {
+                let loading = false;
+                let nextUrl = {!! json_encode($products->nextPageUrl()) !!} || null;
+                const sentinel = document.getElementById('products-sentinel');
+                const grid = document.getElementById('products-grid');
+                const loader = document.getElementById('products-loader');
+                const endMsg = document.getElementById('products-end');
+
+                if (!sentinel || !grid || !nextUrl) return;
+
+                const observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry.isIntersecting || loading || !nextUrl) return;
+                        loading = true;
+                        loader.classList.remove('hidden');
+
+                        fetch(nextUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(function (res) { return res.json(); })
+                            .then(function (data) {
+                                if (data.html) {
+                                    grid.insertAdjacentHTML('beforeend', data.html);
+                                }
+                                nextUrl = data.next_page_url || null;
+                                if (!nextUrl) {
+                                    observer.disconnect();
+                                }
+                            })
+                            .catch(function () { nextUrl = null; observer.disconnect(); })
+                            .finally(function () {
+                                loading = false;
+                                loader.classList.add('hidden');
+                                endMsg.classList.remove('hidden');
+                                endMsg.textContent = nextUrl ? '' : {!! json_encode(__('You have reached the end')) !!};
+                            });
+                    });
+                }, { rootMargin: '200px' });
+
+                observer.observe(sentinel);
+            })();
+        </script>
+    @endif
 @endsection
