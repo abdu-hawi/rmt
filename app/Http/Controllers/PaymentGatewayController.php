@@ -41,6 +41,7 @@ class PaymentGatewayController extends Controller
 
     public function paymentProcess(array $data)
     {
+        Log::info('Edfapay paymentProcess initiated', $data);
         try {
             $paymentGatewayId = $this->getApiMerchantId();
             $initiateUrl      = $this->getEdfapayInitiateUrl();
