@@ -50,7 +50,7 @@ class PaymentGatewayController extends Controller
             $order_number = $data['order_number'];
             $amount       = $data['amount'];
 
-            $currency    = 'SAR';
+            $currency    = strtoupper($data['currency'] ?? 'SAR');
             $description = $data['description'] ?? 'E-commerce Order Payment';
 
             // بيانات العميل

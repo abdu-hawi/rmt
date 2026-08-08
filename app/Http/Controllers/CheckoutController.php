@@ -93,17 +93,13 @@ class CheckoutController extends Controller
 
             Log::info('Order placed', ['order_number' => $order->order_number, 'total' => $total, 'currency' => $currency]);
 
-            // 1. تحويل مبلغ الطلب إلى ريال سعودي دائماً لأن بوابة الدفع تقبل SAR فقط
-            //    (Order::order_number يُستخدم للعلاقات مع الطرف الثالث، و Order::id للعلاقات الداخلية)
-            $amountSar = $currency === CurrencyService::SAR
-                ? $total
-                : CurrencyService::convert($total, CurrencyService::SAR);
-
-            // 2. تمرير بيانات الطلب إلى بوابة الدفع (begin_checkout)
+            // 1. تمرير مبلغ الطلب بعملة المستخدم (SAR أو USD)
+            //    (Order::order_number يُستخدم للعلاقات مع الطرف الثالث، وOrder::id للعلاقات الداخلية)
             return $this->paymentGateway->paymentProcess([
                 'order_id'     => $order->id,
                 'order_number' => $order->order_number,
-                'amount'       => $amountSar,
+                'amount'       => $total,
+                'currency'     => $currency,
                 'description'  => __('Order') . ' #' . $order->order_number,
                 'email'        => $validated['payer_email'],
                 'address'      => $validated['payer_address'],
