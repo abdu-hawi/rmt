@@ -115,6 +115,14 @@ class PaymentGatewayController extends Controller
             $errorMsg  = $responseData['error_message'] ?? $responseData['message'] ?? $responseData['error'] ?? __("payment_gatways.payment_initialization_failed");
             $errorCode = $responseData['error_code'] ?? 'N/A';
 
+            Log::error('Edfapay paymentProcess failed', [
+                'order_id'      => $order_id,
+                'order_number'  => $order_number,
+                'response_data' => $responseData,
+                'error_message' => $errorMsg,
+                'error_code'    => $errorCode,
+            ]);
+
             return redirect()->back()->withErrors([
                 'payment_error' => __("payment_gatways.payment_initialization_failed") . ": " . $errorMsg . " (Code: {$errorCode})"
             ]);
