@@ -67,10 +67,6 @@ class PaymentGatewayController extends Controller
                 'order_number' => $order_number
             ]);
 
-            $failureUrl = route('edfapay.failed', [
-                'order_number' => $order_number
-            ]);
-
             // حفظ إيميل الطلب في Redis لمدة 24 ساعة لاستخدامه عند التحقق من Callback Hash
             Redis::connection('payments_conn')->setex('edfapay_email_' . $order_number, 86400, $payerEmail);
 
@@ -97,8 +93,7 @@ class PaymentGatewayController extends Controller
                 'payer_phone'       => $payerPhone,
                 'payer_zip'         => $payerZip,
                 'payer_ip'          => $ip,
-                'successUrl'        => $successUrl,
-                'failureUrl'        => $failureUrl,
+                'term_url_3ds'      => $successUrl,
                 'recurring_init'    => 'N',
                 'auth'              => 'N',
             ];
@@ -114,14 +109,6 @@ class PaymentGatewayController extends Controller
             $responseData = $response->json();
             $errorMsg  = $responseData['error_message'] ?? $responseData['message'] ?? $responseData['error'] ?? __("payment_gatways.payment_initialization_failed");
             $errorCode = $responseData['error_code'] ?? 'N/A';
-
-            Log::error('Edfapay paymentProcess failed', [
-                'order_id'      => $order_id,
-                'order_number'  => $order_number,
-                'response_data' => $responseData,
-                'error_message' => $errorMsg,
-                'error_code'    => $errorCode,
-            ]);
 
             return redirect()->back()->withErrors([
                 'payment_error' => __("payment_gatways.payment_initialization_failed") . ": " . $errorMsg . " (Code: {$errorCode})"
