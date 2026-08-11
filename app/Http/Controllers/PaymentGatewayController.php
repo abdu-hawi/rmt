@@ -67,6 +67,10 @@ class PaymentGatewayController extends Controller
                 'order_number' => $order_number
             ]);
 
+            $failureUrl = route('edfapay.failed', [
+                'order_number' => $order_number
+            ]);
+
             // حفظ إيميل الطلب في Redis لمدة 24 ساعة لاستخدامه عند التحقق من Callback Hash
             Redis::connection('payments_conn')->setex('edfapay_email_' . $order_number, 86400, $payerEmail);
 
@@ -93,7 +97,8 @@ class PaymentGatewayController extends Controller
                 'payer_phone'       => $payerPhone,
                 'payer_zip'         => $payerZip,
                 'payer_ip'          => $ip,
-                'term_url_3ds'      => $successUrl,
+                'successUrl'        => $successUrl,
+                'failureUrl'        => $failureUrl,
                 'recurring_init'    => 'N',
                 'auth'              => 'N',
             ];
