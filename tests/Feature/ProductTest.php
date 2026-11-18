@@ -54,3 +54,15 @@ it('includes schema JSON-LD on product page', function () {
     $response->assertSee('application/ld+json');
     $response->assertSee('SoftwareApplication');
 });
+
+it('offers a one-click add-to-cart form on every product card', function () {
+    $response = $this->get(route('home'))->assertOk();
+    $html = $response->getContent();
+
+    $expectedCards = min(Product::where('is_active', true)->count(), 12); // 12 = listing page size
+
+    expect(substr_count($html, 'data-ajax-add="1"'))->toBe($expectedCards)
+        ->and(substr_count($html, 'name="product_id"'))->toBe($expectedCards)
+        ->and($html)->toContain('action="' . route('cart.add') . '"')
+        ->and($html)->toContain('add-to-cart-btn');
+});

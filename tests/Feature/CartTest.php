@@ -84,3 +84,16 @@ it('shows cart page', function () {
 it('shows empty cart message', function () {
     $this->get(route('cart.index'))->assertSee('Your cart is empty');
 });
+
+it('adds a product through the ajax add-to-cart request', function () {
+    $product = Product::first();
+
+    $this->postJson(route('cart.add'), ['product_id' => $product->id, 'quantity' => 1])
+        ->assertOk()
+        ->assertJson([
+            'success' => true,
+            'count' => 1,
+        ]);
+
+    expect($this->cart->count())->toBe(1);
+});

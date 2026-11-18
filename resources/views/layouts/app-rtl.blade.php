@@ -294,6 +294,59 @@
                     badge.remove();
                 }
             };
+
+            // AJAX "Add to Cart" (product cards + product page) — delegated so it
+            // also covers cards appended by the infinite-scroll pagination.
+            var addedLabel = @json(__('Added'));
+
+            document.addEventListener('submit', function (e) {
+                var form = e.target instanceof Element ? e.target.closest('form[data-ajax-add]') : null;
+                if (!form) return;
+
+                e.preventDefault();
+
+                if (form.dataset.loading === '1') return;
+                var btn = form.querySelector('[type="submit"]');
+                if (!btn) return;
+
+                var token = form.querySelector('input[name="_token"]');
+                var original = btn.innerHTML;
+
+                form.dataset.loading = '1';
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-wait');
+
+                function restore() {
+                    form.dataset.loading = '0';
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                    btn.classList.remove('opacity-70', 'cursor-wait', 'is-added');
+                }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': token ? token.value : '',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                })
+                .then(function (res) { return res.ok ? res.json() : Promise.reject(res); })
+                .then(function (data) {
+                    if (!data || !data.success) { restore(); return; }
+
+                    var rect = btn.getBoundingClientRect();
+                    if (window.riofFlyToCart) window.riofFlyToCart(rect);
+                    if (window.riofUpdateCartCount) window.riofUpdateCartCount(data.count);
+
+                    btn.innerHTML = '<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span>' + addedLabel + '</span>';
+                    btn.classList.add('is-added');
+
+                    setTimeout(restore, 1800);
+                })
+                .catch(restore);
+            });
         });
     </script>
     @yield('scripts')
