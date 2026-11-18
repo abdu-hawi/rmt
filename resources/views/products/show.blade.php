@@ -71,6 +71,9 @@
                         <div>
                             <div class="text-3xl font-extrabold text-accent-light">{{ format_price($product->price_usd) }}</div>
                             <p class="text-sm text-muted-400 mt-1">{{ __('Price') }} (SAR): <span class="text-white">{{ format_price($product->price_usd, 'sar') }}</span></p>
+                            @if($product->is_tax_inclusive)
+                                <span class="inline-flex items-center mt-2 px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
+                            @endif
                         </div>
 
                         <div class="space-y-2 text-xs text-muted-400">
@@ -108,6 +111,9 @@
                             <a href="{{ route('products.show', $rel->slug) }}" class="glass-card p-5 hover:glow-border transition-all duration-300 group">
                                 <h3 class="font-semibold text-white group-hover:text-accent-light transition-colors">{{ $isAr ? $rel->name_ar : $rel->name_en }}</h3>
                                 <p class="text-accent-light font-bold mt-2">{{ format_price($rel->price_usd) }}</p>
+                                @if($rel->is_tax_inclusive)
+                                    <span class="inline-flex items-center mt-1.5 px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
+                                @endif
                             </a>
                         @endforeach
                     </div>

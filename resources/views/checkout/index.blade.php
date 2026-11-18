@@ -95,7 +95,12 @@
                             <div class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-slate-700/20">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-white truncate">{{ $item['name'] }}</p>
-                                    <p class="text-xs text-muted-400">{{ __('Qty') }}: {{ $item['quantity'] }}</p>
+                                    <p class="text-xs text-muted-400 flex items-center gap-2">
+                                        <span>{{ __('Qty') }}: {{ $item['quantity'] }}</span>
+                                        @if($item['is_tax_inclusive'] ?? false)
+                                            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
+                                        @endif
+                                    </p>
                                 </div>
                                 <span class="text-sm font-semibold text-accent-light flex-shrink-0 ml-3">{{ \App\Services\CurrencyService::format($item['price_usd'] * $item['quantity']) }}</span>
                             </div>

@@ -25,11 +25,12 @@ class CheckoutController extends Controller
         }
 
         $items = $this->cart->items();
-        $subtotal = $this->cart->subtotal();
-        $discount = $this->cart->discount();
-        $taxableSubtotal = $this->cart->taxableSubtotal();
-        $vat = $this->cart->vat();
-        $total = $this->cart->total();
+        $summary = $this->cart->summary();
+        $subtotal = $summary['subtotal'];
+        $discount = $summary['discount'];
+        $taxableSubtotal = $summary['taxable_subtotal'];
+        $vat = $summary['vat'];
+        $total = $summary['total'];
 
         return view('checkout.index', compact('items', 'subtotal', 'discount', 'taxableSubtotal', 'vat', 'total'));
     }
@@ -55,11 +56,11 @@ class CheckoutController extends Controller
             DB::beginTransaction();
 
             $currency = CurrencyService::current();
-            $subtotal = $this->cart->subtotal($currency);
-            $discount = $this->cart->discount($currency);
-            $taxableSubtotal = $this->cart->taxableSubtotal($currency);
-            $vat = $this->cart->vat($currency);
-            $total = $this->cart->total($currency);
+            $summary = $this->cart->summary($currency);
+            $subtotal = $summary['subtotal'];
+            $discount = $summary['discount'];
+            $vat = $summary['vat'];
+            $total = $summary['total'];
             $coupon = $this->cart->appliedCoupon();
 
             $order = Order::create([
@@ -73,15 +74,18 @@ class CheckoutController extends Controller
                 ...$validated,
             ]);
 
-            foreach ($this->cart->items() as $item) {
+            // Snapshot the tax configuration of every line so later product
+            // edits can never rewrite the history of this order.
+            foreach ($summary['lines'] as $line) {
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $item['id'],
-                    'product_name' => $item['name'],
-                    'price' => $currency === CurrencyService::SAR
-                        ? CurrencyService::convert($item['price_usd'], CurrencyService::SAR)
-                        : $item['price_usd'],
-                    'quantity' => $item['quantity'],
+                    'product_id' => $line['id'],
+                    'product_name' => $line['name'],
+                    'price' => $line['unit_price'],
+                    'quantity' => $line['quantity'],
+                    'is_tax_inclusive' => $line['is_tax_inclusive'],
+                    'net_total' => $line['net_total'],
+                    'tax_amount' => $line['tax_amount'],
                 ]);
             }
 
@@ -93,13 +97,18 @@ class CheckoutController extends Controller
 
             Log::info('Order placed', ['order_number' => $order->order_number, 'total' => $total, 'currency' => $currency]);
 
-            // 1. تمرير مبلغ الطلب بعملة المستخدم (SAR أو USD)
-            //    (Order::order_number يُستخدم للعلاقات مع الطرف الثالث، وOrder::id للعلاقات الداخلية)
+            // بوابة EdfaPay تعمل بالريال السعودي فقط (SAR-only كما هو موثق في PROJECT_MAP)،
+            // لذلك نحوّل الإجمالي إلى SAR عند الشراء بعملة أخرى قبل تمريره للبوابة.
+            $gatewayCurrency = CurrencyService::SAR;
+            $gatewayAmount = $currency === CurrencyService::SAR
+                ? $total
+                : CurrencyService::convert((float) $total, CurrencyService::SAR);
+
             return $this->paymentGateway->paymentProcess([
                 'order_id'     => $order->id,
                 'order_number' => $order->order_number,
-                'amount'       => $total,
-                'currency'     => $currency,
+                'amount'       => $gatewayAmount,
+                'currency'     => $gatewayCurrency,
                 'description'  => __('Order') . ' #' . $order->order_number,
                 'email'        => $validated['payer_email'],
                 'address'      => $validated['payer_address'],

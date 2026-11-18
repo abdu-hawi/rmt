@@ -12,7 +12,7 @@ class Product extends Model
         'slug', 'type', 'category_id',
         'name_en', 'name_ar',
         'description_en', 'description_ar',
-        'price_usd', 'price_sar',
+        'price_usd', 'price_sar', 'is_tax_inclusive',
         'features_en', 'features_ar',
         'seo_title_en', 'seo_title_ar',
         'seo_description_en', 'seo_description_ar',
@@ -26,6 +26,7 @@ class Product extends Model
             'features_en' => 'array',
             'features_ar' => 'array',
             'is_active' => 'boolean',
+            'is_tax_inclusive' => 'boolean',
             'price_usd' => 'decimal:2',
             'price_sar' => 'decimal:2',
         ];

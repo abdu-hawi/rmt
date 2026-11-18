@@ -59,18 +59,28 @@
         <h2 class="font-semibold text-white mb-4">{{ __('Order Items') }}</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
-                <thead><tr class="border-b border-slate-700/30"><th class="text-left p-3 text-muted-400 font-medium">{{ __('Product') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Price') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Quantity') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Subtotal') }}</th></tr></thead>
+                <thead><tr class="border-b border-slate-700/30"><th class="text-left p-3 text-muted-400 font-medium">{{ __('Product') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Unit Price') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Quantity') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Net (Excl. VAT)') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('VAT') }}</th><th class="text-left p-3 text-muted-400 font-medium">{{ __('Total') }}</th></tr></thead>
                 <tbody>
                     @foreach($order->items as $item)
                         <tr class="border-b border-slate-700/20">
-                            <td class="p-3 text-white">{{ $item->product_name }}</td>
+                            <td class="p-3">
+                                <span class="text-white">{{ $item->product_name }}</span>
+                                <span class="block mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full {{ $item->is_tax_inclusive ? 'text-success bg-success/10 border border-success/20' : 'text-muted-400 bg-white/5 border border-slate-700/30' }}">
+                                        {{ $item->is_tax_inclusive ? __('Tax Included') : __('Tax Excluded') }}
+                                    </span>
+                                </span>
+                            </td>
                             <td class="p-3 text-muted-400 font-mono">{{ \App\Services\CurrencyService::format($item->price, $order->currency) }}</td>
                             <td class="p-3 text-white">{{ $item->quantity }}</td>
-                            <td class="p-3 text-accent-light font-mono">{{ \App\Services\CurrencyService::format($item->price * $item->quantity, $order->currency) }}</td>
+                            <td class="p-3 text-white font-mono">{{ \App\Services\CurrencyService::format($item->net_total, $order->currency) }}</td>
+                            <td class="p-3 text-muted-400 font-mono">{{ \App\Services\CurrencyService::format($item->tax_amount, $order->currency) }}</td>
+                            <td class="p-3 text-accent-light font-mono">{{ \App\Services\CurrencyService::format($item->gross_total, $order->currency) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
+        <p class="text-[11px] text-muted-400 mt-3">{{ __('VAT is included in the price of tax-inclusive items and added on top of tax-exclusive items.') }}</p>
     </div>
 @endsection

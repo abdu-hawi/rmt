@@ -208,7 +208,8 @@ settings         → id, key (unique), value
 | 10 | Tests (56 passing, 130 assertions) | ✅ | `php artisan test` |
 | 11 | ZATCA VAT Compliance (15%) | ✅ | config/tax.php, orders.vat, CartService taxable/vat, VAT breakdown UI + tests |
 | 12 | EdfaPay Payment Integration | ✅ | paymentProcess (SAR-only), callback → Redis → AJAX polling ×15 → fallback status, PaymentOrder + processing page |
+| 13 | Tax-Inclusive / Tax-Exclusive Pricing | ✅ | `products.is_tax_inclusive`, `CartService::summary()` (mixed carts, cent-exact), `order_items` tax snapshot, storefront `Tax Included` badge, admin order tax breakdown — see `TAX_IMPLEMENTATION_PLAN.md` |
 
 ---
 
-*Last updated: 2026-08-02 — EdfaPay payment gateway integration completed. All milestones complete. ✅*
+*Last updated: 2026-11-18 — tax-inclusive/exclusive pricing system completed. All milestones complete. ✅*

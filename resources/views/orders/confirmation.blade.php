@@ -51,9 +51,21 @@
                 <h2 class="font-semibold text-white text-left mb-3">{{ __('Order Items') }}</h2>
                 <div class="space-y-2">
                     @foreach($order->items as $item)
-                        <div class="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-slate-700/20 text-sm">
-                            <span class="text-white">{{ $item->product_name }}</span>
-                            <span class="text-accent-light font-semibold">{{ \App\Services\CurrencyService::format($item->price, $order->currency) }}</span>
+                        <div class="flex justify-between items-start gap-3 p-3 rounded-lg bg-white/5 border border-slate-700/20 text-sm">
+                            <div class="min-w-0">
+                                <p class="text-white truncate">{{ $item->product_name }}</p>
+                                <p class="text-xs text-muted-400 mt-0.5">
+                                    {{ __('Quantity') }}: {{ $item->quantity }}
+                                    &middot; {{ __('VAT') }}: {{ \App\Services\CurrencyService::format($item->tax_amount, $order->currency) }}
+                                </p>
+                                <span class="inline-flex items-center mt-1 px-2 py-0.5 text-[10px] font-medium rounded-full {{ $item->is_tax_inclusive ? 'text-success bg-success/10 border border-success/20' : 'text-muted-400 bg-white/5 border border-slate-700/30' }}">
+                                    {{ $item->is_tax_inclusive ? __('Tax Included') : __('Tax Excluded') }}
+                                </span>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-accent-light font-semibold">{{ \App\Services\CurrencyService::format($item->gross_total, $order->currency) }}</p>
+                                <p class="text-[11px] text-muted-400">{{ __('Net (Excl. VAT)') }}: {{ \App\Services\CurrencyService::format($item->net_total, $order->currency) }}</p>
+                            </div>
                         </div>
                     @endforeach
                 </div>

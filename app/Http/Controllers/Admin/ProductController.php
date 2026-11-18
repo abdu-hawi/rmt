@@ -32,6 +32,7 @@ class ProductController extends Controller
             'description_ar' => 'required|string',
             'price_usd' => 'required|numeric|min:0',
             'price_sar' => 'required|numeric|min:0',
+            'is_tax_inclusive' => 'boolean',
             'category_id' => 'nullable|exists:categories,id',
             'is_active' => 'boolean',
             'download_url' => 'nullable|string|max:500',
@@ -48,6 +49,7 @@ class ProductController extends Controller
         $validated['slug'] = Str::slug($validated['name_en']);
         $validated['type'] = 'digital';
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_tax_inclusive'] = $request->boolean('is_tax_inclusive');
         $validated['sort_order'] = $request->input('sort_order', 0);
 
         $product = Product::create($validated);
@@ -72,6 +74,7 @@ class ProductController extends Controller
             'description_ar' => 'required|string',
             'price_usd' => 'required|numeric|min:0',
             'price_sar' => 'required|numeric|min:0',
+            'is_tax_inclusive' => 'boolean',
             'category_id' => 'nullable|exists:categories,id',
             'is_active' => 'boolean',
             'download_url' => 'nullable|string|max:500',
@@ -89,6 +92,7 @@ class ProductController extends Controller
             $validated['slug'] = Str::slug($validated['name_en']);
         }
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_tax_inclusive'] = $request->boolean('is_tax_inclusive');
 
         $product->update($validated);
 

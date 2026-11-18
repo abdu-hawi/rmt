@@ -47,6 +47,16 @@
         </div>
 
         <div>
+            <label class="flex items-start gap-2 text-sm cursor-pointer">
+                <input type="checkbox" name="is_tax_inclusive" value="1" {{ old('is_tax_inclusive', $product->is_tax_inclusive) ? 'checked' : '' }} class="mt-0.5 rounded border-slate-700 bg-carbon-900 text-accent focus:ring-accent/30">
+                <span>
+                    <span class="text-white">{{ __('Price includes Tax') }}</span>
+                    <span class="block text-[11px] text-muted-400 mt-0.5">{{ __('VAT is extracted from this price instead of being added on top.') }}</span>
+                </span>
+            </label>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-muted-400 mb-1.5">{{ __('Category') }}</label>
             <select name="category_id" class="input-floating">
                 <option value="">{{ __('None') }}</option>

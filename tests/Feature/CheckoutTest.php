@@ -180,9 +180,14 @@ it('sends SAR amount to payment gateway when cart currency is USD', function () 
         'payer_phone' => '123', 'payer_zip' => '10001',
     ]);
 
-    Http::assertSent(function ($request) {
+    $order = Order::first();
+    // EdfaPay is SAR-only, so the USD order total is converted before being sent.
+    $expectedSarAmount = round((float) $order->total * (float) config('currency.rate_usd_to_sar', 3.75), 2);
+
+    Http::assertSent(function ($request) use ($expectedSarAmount) {
         return $request->url() === 'https://api.edfapay.com/payment/initiate'
-            && $request['order_currency'] === 'SAR';
+            && $request['order_currency'] === 'SAR'
+            && (float) $request['order_amount'] === $expectedSarAmount;
     });
 });
 
