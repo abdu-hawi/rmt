@@ -6,7 +6,7 @@ use App\Models\Product;
 
 class SeoService
 {
-    public static function metaTags(Product $product = null, array $overrides = []): array
+    public static function metaTags(?Product $product = null, array $overrides = []): array
     {
         $locale = app()->getLocale();
         $isAr = $locale === 'ar';
@@ -46,7 +46,7 @@ class SeoService
         ];
     }
 
-    public static function schemaJsonLd(Product $product = null): ?array
+    public static function schemaJsonLd(?Product $product = null): ?array
     {
         if (!$product) {
             return null;

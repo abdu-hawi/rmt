@@ -9,10 +9,18 @@ beforeEach(function () {
     session()->put('currency', 'usd');
 });
 
-it('defaults to USD', function () {
+it('uses the currency stored in the session', function () {
     expect(CurrencyService::current())->toBe('usd');
     expect(CurrencyService::symbol())->toBe('$');
     expect(CurrencyService::name())->toBe('USD');
+});
+
+it('defaults to SAR when no currency is selected', function () {
+    session()->forget('currency');
+
+    expect(CurrencyService::current())->toBe('sar');
+    expect(CurrencyService::symbol())->toBe('ر.س');
+    expect(CurrencyService::name())->toBe('SAR');
 });
 
 it('switches currency', function () {

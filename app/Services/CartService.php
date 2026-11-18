@@ -66,7 +66,7 @@ class CartService
         return array_sum(array_column(Session::get(self::CART_KEY, []), 'quantity'));
     }
 
-    public function subtotal(string $currency = null): float
+    public function subtotal(?string $currency = null): float
     {
         $currency = $currency ?? CurrencyService::current();
         $total = 0;
@@ -79,7 +79,7 @@ class CartService
         return round($total, 2);
     }
 
-    public function discount(string $currency = null): float
+    public function discount(?string $currency = null): float
     {
         $coupon = $this->appliedCoupon();
         if (!$coupon) {
@@ -95,17 +95,17 @@ class CartService
         return min($coupon->value, $subtotal);
     }
 
-    public function taxableSubtotal(string $currency = null): float
+    public function taxableSubtotal(?string $currency = null): float
     {
         return round(max(0, $this->subtotal($currency) - $this->discount($currency)), 2);
     }
 
-    public function vat(string $currency = null): float
+    public function vat(?string $currency = null): float
     {
         return round($this->taxableSubtotal($currency) * config('tax.vat_rate', 0.15), 2);
     }
 
-    public function total(string $currency = null): float
+    public function total(?string $currency = null): float
     {
         return round($this->taxableSubtotal($currency) + $this->vat($currency), 2);
     }

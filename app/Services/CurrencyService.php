@@ -16,7 +16,7 @@ class CurrencyService
 
     public static function current(): string
     {
-        return Session::get('currency', config('currency.default', self::USD));
+        return Session::get('currency', config('currency.default', self::SAR));
     }
 
     public static function switch(string $currency): void
@@ -26,19 +26,19 @@ class CurrencyService
         }
     }
 
-    public static function symbol(string $currency = null): string
+    public static function symbol(?string $currency = null): string
     {
         $currency = $currency ?? self::current();
-        return config("currency.symbols.{$currency}", '$');
+        return config("currency.symbols.{$currency}", config('currency.symbols.' . self::SAR, 'ر.س'));
     }
 
-    public static function name(string $currency = null): string
+    public static function name(?string $currency = null): string
     {
         $currency = $currency ?? self::current();
-        return config("currency.names.{$currency}", 'USD');
+        return config("currency.names.{$currency}", 'SAR');
     }
 
-    public static function convert(float $amountUsd, string $to = null): float
+    public static function convert(float $amountUsd, ?string $to = null): float
     {
         $to = $to ?? self::current();
         if ($to === self::SAR) {
@@ -47,7 +47,7 @@ class CurrencyService
         return $amountUsd;
     }
 
-    public static function format(float $amount, string $currency = null): string
+    public static function format(float $amount, ?string $currency = null): string
     {
         $currency = $currency ?? self::current();
         $symbol = self::symbol($currency);

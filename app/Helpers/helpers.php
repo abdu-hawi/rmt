@@ -10,7 +10,7 @@ if (!function_exists('currency')) {
 }
 
 if (!function_exists('format_price')) {
-    function format_price(float $amountUsd, string $currency = null): string
+    function format_price(float $amountUsd, ?string $currency = null): string
     {
         $currency = $currency ?? CurrencyService::current();
         $converted = CurrencyService::convert($amountUsd, $currency);

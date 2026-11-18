@@ -25,8 +25,8 @@
             <div>
                 <label class="block text-sm font-medium text-muted-400 mb-1.5">{{ __('Default Currency') }}</label>
                 <select name="default_currency" class="input-floating">
-                    <option value="usd" {{ (old('default_currency', $settings['default_currency'] ?? 'usd')) === 'usd' ? 'selected' : '' }}>{{ __('USD') }}</option>
-                    <option value="sar" {{ (old('default_currency', $settings['default_currency'] ?? 'usd')) === 'sar' ? 'selected' : '' }}>{{ __('SAR') }}</option>
+                    <option value="usd" {{ (old('default_currency', $settings['default_currency'] ?? 'sar')) === 'usd' ? 'selected' : '' }}>{{ __('USD') }}</option>
+                    <option value="sar" {{ (old('default_currency', $settings['default_currency'] ?? 'sar')) === 'sar' ? 'selected' : '' }}>{{ __('SAR') }}</option>
                 </select>
             </div>
             <div>
