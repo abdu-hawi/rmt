@@ -44,8 +44,11 @@ checkout and admin order screens:
 5. **Snapshot at checkout** — `order_items` keeps `is_tax_inclusive`, `net_total` and `tax_amount`.
    Historical rows are back-filled (`net_total = price × qty`, `tax_amount` = proportional share of
    `orders.vat`, flag `false`) so old orders keep a coherent breakdown.
-6. **Currency first, then tax** — unit prices are converted (`CurrencyService::convert`, 2 decimals),
-   then tax maths runs in the active currency (cart, checkout, order and admin stay consistent).
+6. **Stored price first, then tax** — the price saved for the active currency (`Product::priceFor`,
+   i.e. `price_sar` or `price_usd`) is used **verbatim**; it is never derived from the other currency,
+   so the amount typed in the admin panel is exactly what the customer sees (200,000 SAR stays
+   200,000.00 instead of 199,999.99). Tax maths then runs in the active currency everywhere
+   (storefront, cart, checkout, orders, admin).
 7. **Gateway currency** — EdfaPay is documented as SAR-only (`PROJECT_MAP.md`); the checkout converts
    the grand total to SAR when the order currency is USD and always sends `SAR` to the gateway. This
    also fixes the previously red `CheckoutTest` case.
@@ -194,3 +197,18 @@ Live smoke test on `http://rmt.test` (product temporarily flagged inclusive, the
 - [x] Translations
 - [x] Tests written & green
 - [x] Build verified
+
+## 10. Follow-up fix (2026-11-19): price cent drift
+
+Storefront prices were derived from `price_usd × rate` instead of the amount stored for the active
+currency, so 200,000 SAR rendered as `199,999.99` and 175,000 SAR as `175,000.01`.
+
+- [x] `Product::priceFor($currency)` returns the stored `price_sar` / `price_usd` verbatim
+- [x] `format_product_price()` helper used by product cards, product page and related products
+- [x] Cart session snapshots both prices; `CartService::summary()` uses the stored price per currency
+      (legacy cart rows fall back to conversion)
+- [x] Cart / checkout views render `summary()['lines']` (fixes a stale USD value formatted as SAR)
+- [x] JSON-LD `offers.price` / `priceCurrency` follow the active currency and stored price
+- [x] Regression tests: 200,000 SAR and 175,000 SAR display exactly (listing, product page, cart,
+      checkout, order snapshot); 82 tests / 296 assertions green
+

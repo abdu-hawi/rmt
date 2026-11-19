@@ -24,8 +24,8 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
-        $items = $this->cart->items();
         $summary = $this->cart->summary();
+        $items = collect($summary['lines']);
         $subtotal = $summary['subtotal'];
         $discount = $summary['discount'];
         $taxableSubtotal = $summary['taxable_subtotal'];

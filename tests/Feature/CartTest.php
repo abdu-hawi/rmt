@@ -97,3 +97,35 @@ it('adds a product through the ajax add-to-cart request', function () {
 
     expect($this->cart->count())->toBe(1);
 });
+
+it('uses the stored SAR price verbatim in the cart and checkout', function () {
+    $product = Product::create([
+        'slug' => 'sar-exact-price',
+        'type' => 'digital',
+        'name_en' => 'SAR Exact Price',
+        'name_ar' => 'سعر ريالي دقيق',
+        'description_en' => 'Test description',
+        'description_ar' => 'وصف الاختبار',
+        'price_usd' => 53333.33,
+        'price_sar' => 200000.00,
+        'is_active' => true,
+    ]);
+
+    $this->cart->add($product, 1);
+    $summary = $this->cart->summary('sar');
+
+    expect($summary['lines'][0]['unit_price'])->toBe(200000.0)
+        ->and($summary['subtotal'])->toBe(200000.0)
+        ->and($summary['vat'])->toBe(30000.0)
+        ->and($summary['total'])->toBe(230000.0);
+
+    $this->get(route('cart.index'))
+        ->assertOk()
+        ->assertSee('200,000.00')
+        ->assertDontSee('199,999.99');
+
+    $this->get(route('checkout.index'))
+        ->assertOk()
+        ->assertSee('200,000.00')
+        ->assertDontSee('199,999.99');
+});

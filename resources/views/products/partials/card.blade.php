@@ -13,7 +13,7 @@
             <div class="pt-4 border-t border-slate-700/30 space-y-3">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex flex-col items-start gap-1">
-                        <span class="text-xl font-bold text-accent-light">{{ format_price($product->price_usd) }}</span>
+                        <span class="text-xl font-bold text-accent-light">{{ format_product_price($product) }}</span>
                         @if($product->is_tax_inclusive)
                             <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
                         @endif

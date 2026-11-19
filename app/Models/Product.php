@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CurrencyService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,6 +36,19 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Price stored for the given currency.
+     *
+     * Both prices are entered by the admin and must be used verbatim: deriving
+     * SAR from `price_usd × rate` introduced cent drift (200,000 → 199,999.99).
+     */
+    public function priceFor(string $currency): float
+    {
+        $currency = strtolower($currency);
+
+        return (float) ($currency === CurrencyService::SAR ? $this->price_sar : $this->price_usd);
     }
 
     public function orderItems(): HasMany

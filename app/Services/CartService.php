@@ -33,6 +33,7 @@ class CartService
                 'slug' => $product->slug,
                 'name' => app()->getLocale() === 'ar' ? $product->name_ar : $product->name_en,
                 'price_usd' => (float) $product->price_usd,
+                'price_sar' => (float) $product->price_sar,
                 'is_tax_inclusive' => (bool) $product->is_tax_inclusive,
                 'quantity' => $quantity,
             ];
@@ -95,8 +96,10 @@ class CartService
         $subtotal = 0.0;
 
         foreach (Session::get(self::CART_KEY, []) as $item) {
+            // Use the price stored for the active currency; converting between
+            // currencies here caused cent drift (e.g. 200,000 → 199,999.99).
             $unitPrice = $currency === CurrencyService::SAR
-                ? CurrencyService::convert((float) $item['price_usd'], CurrencyService::SAR)
+                ? (float) ($item['price_sar'] ?? CurrencyService::convert((float) $item['price_usd'], CurrencyService::SAR))
                 : (float) $item['price_usd'];
             $quantity = (int) $item['quantity'];
             $gross = round($unitPrice * $quantity, 2);

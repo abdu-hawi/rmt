@@ -178,8 +178,8 @@ it('keeps totals cent-exact across price and quantity combinations', function ()
     }
 });
 
-it('calculates in SAR after converting the unit price', function () {
-    $product = ($this->makeProduct)(100.00, true); // 375.00 SAR inclusive
+it('uses the stored SAR price for tax calculations', function () {
+    $product = ($this->makeProduct)(100.00, true); // stored SAR price = 375.00 (inclusive)
 
     $this->cart->add($product, 1);
     $summary = $this->cart->summary('sar');
@@ -189,6 +189,47 @@ it('calculates in SAR after converting the unit price', function () {
         ->and($summary['subtotal'])->toBe(326.09)
         ->and($summary['vat'])->toBe(48.91)
         ->and(round($summary['subtotal'] + $summary['vat'], 2))->toBe(375.00);
+});
+
+it('stores the exact stored SAR price on order items', function () {
+    Http::fake([
+        'api.edfapay.com/payment/initiate' => Http::response([
+            'redirect_url' => 'https://checkout.edfapay.test/pay/888',
+        ], 200),
+    ]);
+
+    Redis::shouldReceive('connection')->with('payments_conn')->andReturn(
+        Mockery::mock(['setex' => true])
+    );
+
+    config([
+        'services.edfapay.merchant_id' => 'test_merchant',
+        'services.edfapay.merchant_password' => 'test_secret',
+    ]);
+
+    session()->put('currency', 'sar');
+
+    // Admin typed 200,000 SAR while the USD price was derived from the rate.
+    $product = ($this->makeProduct)(53333.33, false, ['price_sar' => 200000.00]);
+
+    $this->cart->add($product, 1);
+
+    $this->post(route('checkout.store'), [
+        'payer_first_name' => 'John', 'payer_last_name' => 'Doe',
+        'payer_address' => '123 St', 'payer_country' => 'SA',
+        'payer_city' => 'Riyadh', 'payer_email' => 'sar@test.com',
+        'payer_phone' => '123', 'payer_zip' => '10001',
+    ]);
+
+    $order = Order::with('items')->firstOrFail();
+    $item = $order->items->first();
+
+    expect((float) $order->subtotal)->toBe(200000.0)
+        ->and((float) $order->vat)->toBe(30000.0)
+        ->and((float) $order->total)->toBe(230000.0)
+        ->and((float) $item->price)->toBe(200000.0)
+        ->and((float) $item->net_total)->toBe(200000.0)
+        ->and((float) $item->tax_amount)->toBe(30000.0);
 });
 
 it('shows the tax badge only for tax-inclusive products', function () {

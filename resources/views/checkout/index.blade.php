@@ -102,7 +102,7 @@
                                         @endif
                                     </p>
                                 </div>
-                                <span class="text-sm font-semibold text-accent-light flex-shrink-0 ml-3">{{ \App\Services\CurrencyService::format($item['price_usd'] * $item['quantity']) }}</span>
+                                <span class="text-sm font-semibold text-accent-light flex-shrink-0 ml-3">{{ \App\Services\CurrencyService::format($item['unit_price'] * $item['quantity']) }}</span>
                             </div>
                         @endforeach
                     </div>

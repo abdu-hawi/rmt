@@ -15,11 +15,12 @@ class CartController extends Controller
 
     public function index()
     {
-        $items = $this->cart->items();
-        $subtotal = $this->cart->subtotal();
-        $discount = $this->cart->discount();
-        $vat = $this->cart->vat();
-        $total = $this->cart->total();
+        $summary = $this->cart->summary();
+        $items = collect($summary['lines']);
+        $subtotal = $summary['subtotal'];
+        $discount = $summary['discount'];
+        $vat = $summary['vat'];
+        $total = $summary['total'];
         $coupon = $this->cart->appliedCoupon();
 
         return view('cart.index', compact('items', 'subtotal', 'discount', 'vat', 'total', 'coupon'));

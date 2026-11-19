@@ -66,3 +66,47 @@ it('offers a one-click add-to-cart form on every product card', function () {
         ->and($html)->toContain('action="' . route('cart.add') . '"')
         ->and($html)->toContain('add-to-cart-btn');
 });
+
+it('shows the exact stored price for the active currency without cent drift', function () {
+    $product = Product::create([
+        'slug' => 'price-drift-product',
+        'type' => 'digital',
+        'name_en' => 'Price Drift Product',
+        'name_ar' => 'منتج اختبار السعر',
+        'description_en' => 'Test description',
+        'description_ar' => 'وصف الاختبار',
+        'price_usd' => 53333.33,
+        'price_sar' => 200000.00,
+        'is_active' => true,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('200,000.00')
+        ->assertDontSee('199,999.99');
+
+    $this->get(route('products.show', $product->slug))
+        ->assertOk()
+        ->assertSee('200,000.00')
+        ->assertDontSee('199,999.99');
+});
+
+it('shows the stored price of the selected currency', function () {
+    $product = Product::create([
+        'slug' => 'price-currency-product',
+        'type' => 'digital',
+        'name_en' => 'Price Currency Product',
+        'name_ar' => 'منتج العملة',
+        'description_en' => 'Test description',
+        'description_ar' => 'وصف الاختبار',
+        'price_usd' => 46666.67,
+        'price_sar' => 175000.00,
+        'is_active' => true,
+    ]);
+
+    session()->put('currency', 'usd');
+
+    $this->get(route('products.show', $product->slug))
+        ->assertOk()
+        ->assertSee('$46,666.67');
+});

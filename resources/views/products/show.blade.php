@@ -69,8 +69,8 @@
                 <div class="lg:col-span-1">
                     <div class="glass-card p-6 sticky top-24 space-y-4">
                         <div>
-                            <div class="text-3xl font-extrabold text-accent-light">{{ format_price($product->price_usd) }}</div>
-                            <p class="text-sm text-muted-400 mt-1">{{ __('Price') }} (SAR): <span class="text-white">{{ format_price($product->price_usd, 'sar') }}</span></p>
+                            <div class="text-3xl font-extrabold text-accent-light">{{ format_product_price($product) }}</div>
+                            <p class="text-sm text-muted-400 mt-1">{{ __('Price') }} (SAR): <span class="text-white">{{ format_product_price($product, 'sar') }}</span></p>
                             @if($product->is_tax_inclusive)
                                 <span class="inline-flex items-center mt-2 px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
                             @endif
@@ -110,7 +110,7 @@
                         @foreach($related as $rel)
                             <a href="{{ route('products.show', $rel->slug) }}" class="glass-card p-5 hover:glow-border transition-all duration-300 group">
                                 <h3 class="font-semibold text-white group-hover:text-accent-light transition-colors">{{ $isAr ? $rel->name_ar : $rel->name_en }}</h3>
-                                <p class="text-accent-light font-bold mt-2">{{ format_price($rel->price_usd) }}</p>
+                                <p class="text-accent-light font-bold mt-2">{{ format_product_price($rel) }}</p>
                                 @if($rel->is_tax_inclusive)
                                     <span class="inline-flex items-center mt-1.5 px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
                                 @endif

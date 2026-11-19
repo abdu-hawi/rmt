@@ -38,7 +38,8 @@ it('generates JSON-LD schema for product', function () {
     expect($schema)->not->toBeNull();
     expect($schema['@type'])->toBe('SoftwareApplication');
     expect($schema['name'])->toBe($product->name_en);
-    expect($schema['offers']['priceCurrency'])->toBe('USD');
+    expect($schema['offers']['priceCurrency'])->toBe('SAR');
+    expect((float) $schema['offers']['price'])->toBe((float) $product->price_sar);
 });
 
 it('uses defaults when no product', function () {

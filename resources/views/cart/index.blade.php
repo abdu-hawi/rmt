@@ -25,7 +25,7 @@
                             <div class="flex-1">
                                 <h3 class="font-semibold text-white">{{ $item['name'] }}</h3>
                                 <p class="text-sm text-muted-400 mt-1 flex items-center gap-2">
-                                    <span>{{ format_price($item['price_usd']) }} &times; {{ $item['quantity'] }}</span>
+                                    <span>{{ \App\Services\CurrencyService::format($item['unit_price']) }} &times; {{ $item['quantity'] }}</span>
                                     @if($item['is_tax_inclusive'] ?? false)
                                         <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-success bg-success/10 border border-success/20 rounded-full">{{ __('Tax Included') }}</span>
                                     @endif

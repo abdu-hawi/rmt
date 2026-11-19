@@ -54,6 +54,7 @@ class SeoService
 
         $locale = app()->getLocale();
         $isAr = $locale === 'ar';
+        $currency = CurrencyService::current();
 
         return [
             '@context' => 'https://schema.org',
@@ -63,8 +64,8 @@ class SeoService
             'applicationCategory' => 'BusinessApplication',
             'offers' => [
                 '@type' => 'Offer',
-                'price' => (string) $product->price_usd,
-                'priceCurrency' => 'USD',
+                'price' => number_format($product->priceFor($currency), 2, '.', ''),
+                'priceCurrency' => strtoupper($currency),
                 'availability' => 'https://schema.org/InStock',
             ],
             'url' => route('products.show', $product->slug),
